@@ -49,8 +49,10 @@ dependencies:
   curved_navigation_bar: ^1.0.6
   flutter_riverpod: ^2.4.0
   intl: ^0.20.2
-  
-
+  url_launcher: ^6.3.0
+  permission_handler: ^11.3.0
+  connectivity_plus: ^6.0.3
+  flutter_phone_direct_caller: ^2.1.1
   
 
 

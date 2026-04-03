@@ -10,6 +10,8 @@ class CreateLeadScreen extends StatefulWidget {
 class _CreateLeadScreenState extends State<CreateLeadScreen> {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(body: Center(child: Text("Cfeate Lead")));
+    return Scaffold(
+      backgroundColor: Colors.grey[100],
+      body: Center(child: Text("Create Lead")));
   }
 }

@@ -3,58 +3,89 @@ import 'package:flutter_bottom_nav/database/database_helper.dart';
 
 class LeadDetailsRepository {
 
-  /// Fetch specific lead using WHERE condition
   static Future<Map<String, dynamic>?> fetchLeadDetailsById(
     String leadId, {
     List<String>? columnsToDecrypt,
   }) async {
 
-    final db = await DatabaseHelper.instance.database;
+    try {
 
-    final rows = await db.query(
-      "LeadDetails",
-      where: "SrvcReqDtlCode = ?",
-      whereArgs: [leadId],
-    );
+      final db = await DatabaseHelper.instance.database;
+     final encryptedLeadId = CommonUtil.encryptIfNotEmpty(leadId);
+      final rows = await db.query(
+        "LeadDetails",
+        where: "SrvcReqDtlCode = ?",
+        whereArgs: [encryptedLeadId],
+      );
 
-    if (rows.isEmpty) return null;
 
-    final decryptedRows = _decryptRows({
-      "rows": rows,
-      "columns": columnsToDecrypt ??
-          [
-            "Name",
-            "ProdName",
-            "SrvcReqDtlCode",
-          ]
-    });
+      if (rows.isEmpty) return null;
+      final decryptedRows = _decryptRows({
+        "rows": rows,
+        "columns": columnsToDecrypt ??
+            [
+              "Name",
+              "ProdName",
+              "SrvcReqDtlCode",
+            ]
+      });
+      print(decryptedRows);
 
-    return decryptedRows.first;
+      return decryptedRows.first;
+
+    } catch (e, stackTrace) {
+
+      print("LeadDetailsRepository ERROR: $e");
+      print("StackTrace: $stackTrace");
+
+      return null;
+    }
   }
 }
 
 /// Same decrypt logic reused
 List<Map<String, dynamic>> _decryptRows(Map<String, dynamic> params) {
 
-  final List<Map<String, dynamic>> rows =
-      List<Map<String, dynamic>>.from(params["rows"]);
+  try {
 
-  final List<String> columns =
-      List<String>.from(params["columns"]);
+    final List<Map<String, dynamic>> rows =
+        List<Map<String, dynamic>>.from(params["rows"]);
 
-  return rows.map((row) {
+    final List<String> columns =
+        List<String>.from(params["columns"]);
 
-    final Map<String, dynamic> decryptedRow = {};
+    return rows.map((row) {
 
-    for (var key in row.keys) {
+      final Map<String, dynamic> decryptedRow = {};
 
-      decryptedRow[key] = columns.contains(key)
-          ? CommonUtil.decryptIfNotEmpty(row[key])
-          : row[key];
+      for (var key in row.keys) {
 
-    }
+        try {
 
-    return decryptedRow;
+          decryptedRow[key] = columns.contains(key)
+              ? CommonUtil.decryptIfNotEmpty(row[key])
+              : row[key];
 
-  }).toList();
+        } catch (e) {
+
+          print("Decryption error for column: $key");
+          print("Value: ${row[key]}");
+          print("Error: $e");
+
+          decryptedRow[key] = row[key];
+        }
+
+      }
+
+      return decryptedRow;
+
+    }).toList();
+
+  } catch (e, stackTrace) {
+
+    print("DecryptRows ERROR: $e");
+    print("StackTrace: $stackTrace");
+
+    return [];
+  }
 }

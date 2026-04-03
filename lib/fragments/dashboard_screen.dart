@@ -207,6 +207,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
     print("Regions: ${filterState.regions}");
 
     return Scaffold(
+      backgroundColor: Colors.grey[100],
       body: dashboardState.when(
         loading: () => const Center(child: CircularProgressIndicator()),
 

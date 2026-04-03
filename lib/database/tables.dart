@@ -28,7 +28,10 @@ class DbTables {
           EmailID varchar,
           Privacy_Flag varchar,
           Schedule_Days varchar,
-          Ren_Rem_Days varchar
+          Ren_Rem_Days varchar,
+          BridgeCallToTime varchar,
+          BridgeCallFromTime varchar,
+          BridgeCallDownTime varchar
         );
   ''';
 
@@ -493,5 +496,107 @@ CREATE TABLE IF NOT EXISTS LMSLeadActivityTracker(
     TempSrvcReqDtlCode varchar
 );
  
+''';
+
+
+
+static const  CreateTbl_CBFrmMSTLOB ='''
+CREATE TABLE IF NOT EXISTS CBFrmMSTLOB(
+            RecID INTEGER,
+            LOBCode TEXT PRIMARY KEY,
+            LOBCode1 varchar,
+            LOBCode2 varchar,
+            LOBDesc1 varchar,
+            LOBDesc2 varchar,
+            IsActive varchar,
+            CreatedBy varchar,
+            CreateDTim varchar,
+            UpdatedBy varchar,
+            UpdatedDTim varchar,
+            shortcode varchar,
+            CeasedDTim varchar
+)''';
+
+//Drop tbl
+ static const dropCreateTbl_CBFrmMSTLOB = '''
+  DROP TABLE IF EXISTS CBFrmMSTLOB
+''';
+
+//Create tbl
+
+static const CreateTbl_CBFrmMSTProduct ='''
+  CREATE TABLE IF NOT EXISTS CBFrmMSTProduct(
+            RecID INTEGER,
+            ProdCode TEXT PRIMARY KEY,
+            ProdCode1 varchar,
+            ProdCode2 varchar,
+            ProdDesc1 varchar,
+            ProdDesc2 varchar,
+            ClassCode varchar,
+            ClassName varchar,
+            IsActive varchar,
+            CreatedBy varchar,
+            CreateDTim varchar,
+            UpdatedBy varchar,
+            UpdateDTim varchar            
+)''';
+
+//Drop tbl
+ static const dropCreateTbl_CBFrmMSTProduct = '''
+  DROP TABLE IF EXISTS CBFrmMSTProduct
+''';
+
+
+
+static const CreateTbl_CBLMSMSTActivity ='''
+CREATE TABLE IF NOT EXISTS CBLMSMSTActivity(
+            Recid INTEGER,
+            ActivityCode TEXT PRIMARY KEY,
+            ActivityCode1 varchar,
+            ActivityDesc1 varchar,
+            ActivityDesc2 varchar,
+            MPosStatusKey varchar,
+            SortOrder varchar,
+            IsAvailToLead varchar,
+            IsAvailToProspect varchar,
+            IsActive varchar,
+            VID varchar,
+            CreatedBy varchar,
+            CreateDTim varchar,
+            UpdatedBy varchar,
+            UpdateDTim varchar)
+''';
+
+ static const dropCreateTbl_CBLMSMSTActivity = '''
+  DROP TABLE IF EXISTS CBLMSMSTActivity
+''';
+
+
+static const CreateTBL_CUSTOMER_CNT_DTLS ='''
+CREATE TABLE IF NOT EXISTS TBL_CUSTOMER_CNT_DTLS(
+ REC_ID integer primary key autoincrement,
+        Cust_Name TEXT,
+        POLICY_NO TEXT,
+        IS_PRIMARY TEXT,
+        LEAD_NO TEXT,
+        MOBILE_NO TEXT,
+        EMAIL_ID TEXT,
+        IS_PRIMARY_EMAIL TEXT,
+        STATUS TEXT,
+        SRC TEXT,
+        CREATEDBY TEXT,
+        CREATEDDTIME TEXT,
+        DateInLong LONG,
+        UPDATEDBY TEXT,
+        UPDATEDDTIME TEXT,
+        UserId TEXT,
+        SyncStatus TEXT
+)
+
+''';
+
+
+ static const dropTBL_CUSTOMER_CNT_DTLS = '''
+  DROP TABLE IF EXISTS TBL_CUSTOMER_CNT_DTLS
 ''';
 }

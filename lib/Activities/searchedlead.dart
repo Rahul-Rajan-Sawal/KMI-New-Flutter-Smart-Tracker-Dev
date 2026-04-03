@@ -14,11 +14,29 @@ class SearchedLead extends StatefulWidget {
   State<SearchedLead> createState() => _SearchedLeadState();
 }
 
+class TimeLogger {
+  static void log(String msg) {
+    final now = DateTime.now();
+    debugPrint("${now.toIso8601String()} → $msg");
+  }
+}
+
 class _SearchedLeadState extends State<SearchedLead> {
   @override
+void initState() {
+  super.initState();
+  TimeLogger.log("RecyclerView INIT START");
+}
+  @override
   Widget build(BuildContext context) {
+
+     WidgetsBinding.instance.addPostFrameCallback((_) {
+    TimeLogger.log("📱 RecyclerView RENDER END");
+  });
+
     double screenWidth = MediaQuery.of(context).size.width;
     double screenHeight = MediaQuery.of(context).size.height;
+
 
     return Scaffold(
       appBar: AppBar(
@@ -46,25 +64,17 @@ class _SearchedLeadState extends State<SearchedLead> {
               itemBuilder: (context, index) {
                 final lead = widget.leadList[index];
                 // Print raw DB values
-                print("Raw Lead: $lead");
-
-                // Decrypt only the fields you want to show
-                // final name = CommonUtil.decryptIfNotEmpty(lead['Name'] ?? '');
-                // final prodName =
-                //     CommonUtil.decryptIfNotEmpty(lead['ProdName'] ?? '');
-                // final leadId =
-                //     CommonUtil.decryptIfNotEmpty(lead['SrvcReqDtlCode'] ?? '');
-                // final leadAmt =
-                //     CommonUtil.decryptIfNotEmpty(lead['leadAmt'] ?? '');
+//                print("Raw Lead: $lead");
+              
                 final name = lead['Name'] ?? '';
                 final prodName = lead['ProdName'] ?? '';
                 final leadId = lead['SrvcReqDtlCode'] ?? '';
                 final leadAmt = lead['leadAmt'] ?? '';
 
-                print("Decrypted names found : " + name);
-                print("Decrypted Product Name Found : " + prodName);
-                print("Decrypted Product leadId Found : " + leadId);
-                print("Decrypted Product Lead Amount Found : " + leadAmt);
+  //              print("Decrypted names found : " + name);
+  //              print("Decrypted Product Name Found : " + prodName);
+  //              print("Decrypted Product leadId Found : " + leadId);
+  //              print("Decrypted Product Lead Amount Found : " + leadAmt);
 
                 return Card(
                   margin: const EdgeInsets.symmetric(
@@ -266,55 +276,154 @@ class _SearchedLeadState extends State<SearchedLead> {
     print("Update Activity clicked for ${lead['leadId']}");
   }
 
-  void _onViewSummary(Map<String, dynamic> lead) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => LeadSummary(lead: lead)),
+_onViewSummary(Map<String, dynamic> lead) async {
+  try {
+
+    String leadId = lead["SrvcReqDtlCode"];
+
+    final leadSummary =
+        await LeadDetailsRepository.fetchLeadDetailsById(
+      leadId,
+      columnsToDecrypt: [
+        "CustTypeDesc",
+        "MobileTel",
+        "CustPriorityDesc",
+        "LOB",
+        "ProdName",
+        "LeadTypeDesc",
+        "SaleTypeDesc",
+        "PolicyNo",
+        "InstallmentPrem",
+        "ReqChannel",
+        "LeadSourceDesc",
+        "LeadSubSourceDesc",
+        "LeadAging",
+        "BusinessTypeDesc",
+        "LeadRating",
+        "Breaking",
+        "txt_prev_policy_no",
+        "txt_web_quetes",
+        "isOwner",
+        "OwnerName",
+        "AssignedTo",
+        "AssignedToName"
+      ],
     );
 
-    print("View Summary clicked for ${lead['leadId']}");
-  }
-
-  void _onViewDetails(Map<String, dynamic> lead) async{
-
-String leadId = lead['SrvcReqDtlCode'];
-  print("View Details clicked for $leadId");
-
-
- Map<String, dynamic> decryptedLead = {
-    //"Name": CommonUtil.decryptIfNotEmpty(lead["Name"]),
-    "LeadType":CommonUtil.decryptIfNotEmpty(lead["LeadType"]),
-    "ActivityStatus":CommonUtil.decryptIfNotEmpty(lead["ActivityStatus"]),
-    "ProdName": CommonUtil.decryptIfNotEmpty(lead["ProdName"]),
-    "MobileTel": CommonUtil.decryptIfNotEmpty(lead["MobileTel"]),
-    "Email": CommonUtil.decryptIfNotEmpty(lead["Email"]),
-    "PolicyNo": CommonUtil.decryptIfNotEmpty(lead["PolicyNo"]),
-    "InstallmentPrem":CommonUtil.decryptIfNotEmpty(lead["InstallmentPrem"]),
-    "PolicyStartDate": CommonUtil.decryptIfNotEmpty(lead["PolicyStartDate"]),
-    "PolicyEndDate": CommonUtil.decryptIfNotEmpty(lead["PolicyEndDate"]),
-    "RegistrationNo": CommonUtil.decryptIfNotEmpty(lead["RegistrationNo"]),
-    "Make": CommonUtil.decryptIfNotEmpty(lead["Make"]),
-    "Model": CommonUtil.decryptIfNotEmpty(lead["Model"]),
-    "PolNCB":CommonUtil.decryptIfNotEmpty(lead["PolNCB"]),
-    "TelesaleActivity":CommonUtil.decryptIfNotEmpty(lead["TelesaleActivity"]),
-    "TelesaleActivityDoneBy":CommonUtil.decryptIfNotEmpty(lead["TelesaleActivityDoneBy"]),
-    "TelesaleActivityDate":CommonUtil.decryptIfNotEmpty(lead["TelesaleActivityDate"]),
-    "TelesaleRemark":CommonUtil.decryptIfNotEmpty(lead["TelesaleRemark"]),
-    "WFStatus":CommonUtil.decryptIfNotEmpty(lead["WFStatus"]),
-    "WFStatDesc":CommonUtil.decryptIfNotEmpty(lead["WFStatDesc"]),
-    "FuelType": CommonUtil.decryptIfNotEmpty(lead["FuelType"]),
-    "VehicleType": CommonUtil.decryptIfNotEmpty(lead["VehicleType"]),
-  };
-    print(decryptedLead);
-
-
+    if (leadSummary == null) {
+      print("No summary found for LeadId: $leadId");
+      return;
+    }
 
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => ViewDetails(lead: lead,
-            decryptedLead: decryptedLead,
-
-      )),
+      MaterialPageRoute(
+        builder: (context) => LeadSummary(
+          lead: lead,
+          leadSummary: leadSummary,
+        ),
+      ),
     );
+
+  } catch (e, stack) {
+
+    print("ERROR in _onViewSummary: $e");
+    print(stack);
+
   }
+}
+ Future<void> _onViewDetails(Map<String, dynamic> lead) async {
+
+  String leadId = lead["SrvcReqDtlCode"];
+
+  final leadDetails =
+      await LeadDetailsRepository.fetchLeadDetailsById(
+    leadId,
+    columnsToDecrypt: [
+      "LeadType",
+      "ActivityStatus",
+      "ProdName",
+      "MobileTel",
+      "Email",
+      "PolicyNo",
+      "InstallmentPrem",
+      "PolicyStartDate",
+      "PolicyEndDate",
+      "RegistrationNo",
+      "Make",
+      "Model",
+      "PolNCB",
+      "TelesaleActivity",
+      "TelesaleActivityDoneBy",
+      "TelesaleActivityDate",
+      "TelesaleRemark",
+      "WFStatus",
+      "WFStatDesc",
+      "FuelType",
+      "VehicleType"
+    ],
+  );
+
+  // Debug print
+  print("Fetched Lead Details for $leadId: $leadDetails");
+
+  // Null safety check
+  if (leadDetails == null) {
+    print("No lead details found for $leadId");
+    return;
+  }
+
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => ViewDetails(
+        lead: lead,
+        decryptedLead: leadDetails,
+      ),
+    ),
+  );
+}
+// _onViewDetails(Map<String, dynamic> lead) async {
+
+//   String leadId = lead["SrvcReqDtlCode"];
+
+//   final leadDetails =
+//       await LeadDetailsRepository.fetchLeadDetailsById(
+//     leadId,
+//     columnsToDecrypt: [
+//       "LeadType",
+//       "ActivityStatus",
+//       "ProdName",
+//       "MobileTel",
+//       "Email",
+//       "PolicyNo",
+//       "InstallmentPrem",
+//       "PolicyStartDate",
+//       "PolicyEndDate",
+//       "RegistrationNo",
+//       "Make",
+//       "Model",
+//       "PolNCB",
+//       "TelesaleActivity",
+//       "TelesaleActivityDoneBy",
+//       "TelesaleActivityDate",
+//       "TelesaleRemark",
+//       "WFStatus",
+//       "WFStatDesc",
+//       "FuelType",
+//       "VehicleType"
+//     ],
+//   );
+// try{
+//   Navigator.push(
+//     context,
+//     MaterialPageRoute(
+//       builder: (context) => ViewDetails(
+//         lead: lead,
+//         decryptedLead: leadDetails!,
+//       ),
+//     ),
+//   );
+//   }catch(e){}
+// }
 }

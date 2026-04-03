@@ -10,6 +10,8 @@ class SettingScreen extends StatefulWidget {
 class _SettingScreenState extends State<SettingScreen> {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(body: Center(child: Text("Setting")));
+    return Scaffold(
+      backgroundColor: Colors.grey[100],
+      body: Center(child: Text("Setting")));
   }
 }

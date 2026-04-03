@@ -51,7 +51,7 @@ class _MyHeaderDrawerState extends State<MyHeaderDrawer>{
         ),
 
                 Text(
-          "${widget.user}",
+          "(${widget.user})",
           style: TextStyle(
             color: Colors.white,
             fontSize: 17,

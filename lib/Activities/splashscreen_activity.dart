@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bottom_nav/Activities/login_activity.dart';
 import 'package:flutter_bottom_nav/core/apicall/async_get_api_values.dart';
+import 'package:flutter_bottom_nav/core/services/offlineDB_download.dart';
 import 'package:flutter_bottom_nav/core/static_variables.dart';
+import 'package:flutter_bottom_nav/database/offline_DB_helper.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SplashscreenActivity extends StatefulWidget {
@@ -19,6 +21,12 @@ class _SplashScreenState extends State<SplashscreenActivity> {
       callback: (result) async {
         if (result == "Success") {
           await readPrefAndContinue();
+
+         await DBDownloadService.downloadDBsIfNeeded();
+
+          // ✅ ADDED: SAME AS ANDROID → initialize/open DB
+          await OfflineDBHelper.getDatabase();
+
 
           Navigator.push(
             context,

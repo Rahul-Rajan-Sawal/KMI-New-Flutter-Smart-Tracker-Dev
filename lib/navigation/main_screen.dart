@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bottom_nav/Activities/login_activity.dart';
 import 'package:flutter_bottom_nav/Drawer/my_drawer_header.dart';
 import 'package:flutter_bottom_nav/common/common_popup.dart';
+import 'package:flutter_bottom_nav/core/static_variables.dart';
 import 'package:flutter_bottom_nav/fragments/calendar_screen.dart';
 import 'package:flutter_bottom_nav/fragments/create_lead_screen.dart';
 import 'package:flutter_bottom_nav/fragments/dashboard_screen.dart';
@@ -11,6 +12,12 @@ import 'package:flutter_bottom_nav/fragments/setting_screen.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
 
 class MainScreen extends StatefulWidget {
+final String user;
+const MainScreen({
+    Key? key,
+    required this.user,
+  }) : super(key: key);
+
   @override
   State<StatefulWidget> createState() => _MainScreenState();
 }
@@ -95,6 +102,7 @@ final List<Map<String,dynamic>>_drawerItems =[
         return false;
       },
       child: Scaffold(
+         
         key: _scaffoldKey,
         extendBody: true,
         appBar: AppBar(
@@ -122,9 +130,9 @@ final List<Map<String,dynamic>>_drawerItems =[
           child: Column(
             children: [
               MyHeaderDrawer(
-                user:"User",
-                username:"Username",
-                designation :"Designation",
+                user:widget.user,
+                username:StaticVariables.mUserName,
+                designation :StaticVariables.mDesignation,
               ),
               Expanded(child: _buildDrawerList()),
             ],

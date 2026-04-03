@@ -338,15 +338,27 @@ class _LoginActivityState extends State<LoginActivity> {
                           "TokenId": CommonUtil.encryptIfNotEmpty(
                             jsonObject["TokenId"]?.toString() ?? "",
                           ),
+                          "BridgeCallToTime": CommonUtil.encryptIfNotEmpty(
+                            jsonObject["BridgeCallToTime"]?.toString() ?? "",
+                          ),
+                          "BridgeCallFromTime": CommonUtil.encryptIfNotEmpty(
+                            jsonObject["BridgeCallFromTime"]?.toString() ?? "",
+                          ),
+                          "BridgeCallDownTime": CommonUtil.encryptIfNotEmpty(
+                            jsonObject["BridgeCallDownTime"]?.toString() ?? "",
+                          ),
                         };
 
+                       try{
                         final db = await DatabaseHelper.instance.database;
                         await db.delete("iUser");
                         await db.insert("iUser", userData);
-
+                        }catch(e){
+                          print(e);
+                        }
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (_) => MainScreen()),
+                          MaterialPageRoute(builder: (_) => MainScreen(user: userId,)),
                         );
                       }
 

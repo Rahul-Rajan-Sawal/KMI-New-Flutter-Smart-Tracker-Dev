@@ -2,21 +2,93 @@ import 'package:flutter/material.dart';
 
 class LeadSummary extends StatefulWidget {
   final Map<String, dynamic> lead;
+  final Map<String,dynamic>leadSummary;
 
-  const LeadSummary({Key? key, required this.lead}) : super(key: key);
+
+  const LeadSummary({Key? key, required this.lead, required this.leadSummary}) : super(key: key);
 
   @override
   State<LeadSummary> createState() => _LeadSummaryState();
 }
 
 class _LeadSummaryState extends State<LeadSummary> {
+late String name;
+late String custType;
+late String mobileTel;
+late String custPriority;
+late String lob;
+late String product;
+late String leadType;
+late String saleType;
+late String policyNumber;
+late String leadAmount;
+
+late String leadChannel;
+late String leadSource;
+late String leadSubsource;
+late String leadAging;
+late String businessType;
+late String leadRating;
+late String breaking;
+late String prevPolicyNo;
+late String webQuotes;
+
+late String isOwner;
+late String ownerName;
+
+late String assignedTo;
+late String assignedToName;
+
+late String leadOwner;
+late String leadAssignedTo;
 
 
   @override
   void initState() {
     super.initState();
 
-    debugPrint("Lead Summary Loaded for leadId");
+  String safeValue(dynamic value) {
+  if (value == null || value.toString().trim().isEmpty) {
+    return "Not Available";
+  }
+    return value.toString();
+  }
+  name = safeValue(widget.lead["Name"]);
+ custType = safeValue(widget.leadSummary["CustTypeDesc"]);
+mobileTel = safeValue(widget.leadSummary["MobileTel"]);
+custPriority = safeValue(widget.leadSummary["CustPriorityDesc"]);
+lob = safeValue(widget.leadSummary["LOB"]);
+product = safeValue(widget.leadSummary["ProdName"]);
+leadType = safeValue(widget.leadSummary["LeadTypeDesc"]);
+saleType = safeValue(widget.leadSummary["SaleTypeDesc"]);
+policyNumber = safeValue(widget.leadSummary["PolicyNo"]);
+leadAmount = safeValue(widget.leadSummary["InstallmentPrem"]);
+  //lead owner
+  isOwner = safeValue(widget.leadSummary["isOwner"]);
+  ownerName = safeValue(widget.leadSummary["OwnerName"]);
+  leadOwner = (isOwner == "Not Available" && ownerName == "Not Available")
+    ? "Not Available"
+    : "$isOwner ($ownerName)";
+
+//lead assign to
+ assignedTo = safeValue(widget.leadSummary["AssignedTo"]);
+  assignedToName = safeValue(widget.leadSummary["AssignedToName"]);
+
+leadAssignedTo = (assignedTo == "Not Available" && assignedToName == "Not Available")
+    ? "Not Available"
+    : "$assignedTo ($assignedToName)";
+ 
+ leadChannel = safeValue(widget.leadSummary["ReqChannel"]);
+leadSource = safeValue(widget.leadSummary["LeadSourceDesc"]);
+leadSubsource = safeValue(widget.leadSummary["LeadSubSourceDesc"]);
+leadAging = safeValue(widget.leadSummary["LeadAging"]);
+
+businessType = safeValue(widget.leadSummary["BusinessTypeDesc"]);
+leadRating = safeValue(widget.leadSummary["LeadRating"]);
+breaking = safeValue(widget.leadSummary["Breaking"]);
+
+prevPolicyNo = safeValue(widget.leadSummary["txt_prev_policy_no"]);
+webQuotes = safeValue(widget.leadSummary["txt_web_quetes"]);
   }
 
   @override
@@ -54,8 +126,8 @@ class _LeadSummaryState extends State<LeadSummary> {
           crossAxisAlignment:CrossAxisAlignment.start,
           children:[
              Card(
-                          elevation: 4,
-                          shape: RoundedRectangleBorder(
+                      elevation: 4,
+                      shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(20),
                           ),
                           color: Colors.white,
@@ -107,7 +179,7 @@ class _LeadSummaryState extends State<LeadSummary> {
                                             EdgeInsets.symmetric(
                                                 vertical: 5),
                                         child: Text(
-                                          ": Rahul Sawal",
+                                          ":$name",
                                           style: TextStyle(
                                             fontSize: 15,
                                             fontWeight:
@@ -147,7 +219,7 @@ class _LeadSummaryState extends State<LeadSummary> {
                                             EdgeInsets.fromLTRB(
                                                 0, 8, 0, 5),
                                         child: Text(
-                                          ": Not Available",
+                                          ": $custType",
                                           style: TextStyle(
                                             fontSize: 15,
                                             fontWeight:
@@ -182,7 +254,7 @@ class _LeadSummaryState extends State<LeadSummary> {
                                      Expanded(
                                       child:Padding(padding:EdgeInsets.fromLTRB(0,8,0,15),
                                       child:Text(
-                                        ": 89504938948",
+                                        ": $mobileTel",
                                         style:TextStyle(
                                           fontSize:15,
                                         fontWeight:FontWeight.w600,
@@ -214,7 +286,7 @@ class _LeadSummaryState extends State<LeadSummary> {
                                      Expanded(
                                       child:Padding(padding:EdgeInsets.fromLTRB(0,8,0,15),
                                       child:Text(
-                                        ": Premier",
+                                        ": $custPriority",
                                         style:TextStyle(
                                           fontSize:15,
                                         fontWeight:FontWeight.w600,
@@ -284,7 +356,7 @@ class _LeadSummaryState extends State<LeadSummary> {
                                             EdgeInsets.symmetric(
                                                 vertical: 5),
                                         child: Text(
-                                          ": Motor",
+                                          ": $lob",
                                           style: TextStyle(
                                             fontSize: 15,
                                             fontWeight:
@@ -324,7 +396,7 @@ class _LeadSummaryState extends State<LeadSummary> {
                                             EdgeInsets.fromLTRB(
                                                 0, 8, 0, 5),
                                         child: Text(
-                                          ": HDFC ERGO Motor Insurance",
+                                          ": $product",
                                           style: TextStyle(
                                             fontSize: 15,
                                             fontWeight:
@@ -359,7 +431,7 @@ class _LeadSummaryState extends State<LeadSummary> {
                                      Expanded(
                                       child:Padding(padding:EdgeInsets.fromLTRB(0,8,0,5),
                                       child:Text(
-                                        ": Contact",
+                                        ": $leadType",
                                         style:TextStyle(
                                           fontSize:15,
                                         fontWeight:FontWeight.w600,
@@ -424,7 +496,7 @@ class _LeadSummaryState extends State<LeadSummary> {
                                      Expanded(
                                       child:Padding(padding:EdgeInsets.fromLTRB(0,8,0,5),
                                       child:Text(
-                                        ": 642438736248264772",
+                                        ": $policyNumber",
                                         style:TextStyle(
                                           fontSize:15,
                                         fontWeight:FontWeight.w600,
@@ -457,7 +529,7 @@ class _LeadSummaryState extends State<LeadSummary> {
                                      Expanded(
                                       child:Padding(padding:EdgeInsets.fromLTRB(0,8,0,5),
                                       child:Text(
-                                        ": 83749483.00",
+                                        ": $leadAmount",
                                         style:TextStyle(
                                           fontSize:15,
                                         fontWeight:FontWeight.w600,
@@ -490,7 +562,7 @@ class _LeadSummaryState extends State<LeadSummary> {
                                      Expanded(
                                       child:Padding(padding:EdgeInsets.fromLTRB(0,8,0,5),
                                       child:Text(
-                                        ": 707(dvbbfbsd)",
+                                        ": $leadOwner",
                                         style:TextStyle(
                                           fontSize:15,
                                         fontWeight:FontWeight.w600,
@@ -523,7 +595,7 @@ class _LeadSummaryState extends State<LeadSummary> {
                                      Expanded(
                                       child:Padding(padding:EdgeInsets.fromLTRB(0,8,0,5),
                                       child:Text(
-                                        ": Not Available",
+                                        ": $leadAssignedTo",
                                         style:TextStyle(
                                           fontSize:15,
                                         fontWeight:FontWeight.w600,
@@ -555,7 +627,7 @@ class _LeadSummaryState extends State<LeadSummary> {
                                      Expanded(
                                       child:Padding(padding:EdgeInsets.fromLTRB(0,8,0,5),
                                       child:Text(
-                                        ": Existing Customer/Renewal Data",
+                                        ": $leadChannel",
                                         style:TextStyle(
                                           fontSize:15,
                                         fontWeight:FontWeight.w600,
@@ -587,7 +659,7 @@ class _LeadSummaryState extends State<LeadSummary> {
                                      Expanded(
                                       child:Padding(padding:EdgeInsets.fromLTRB(0,8,0,5),
                                       child:Text(
-                                        ": Renewal Retention",
+                                        ": $leadSource",
                                         style:TextStyle(
                                           fontSize:15,
                                         fontWeight:FontWeight.w600,
@@ -619,7 +691,7 @@ class _LeadSummaryState extends State<LeadSummary> {
                                      Expanded(
                                       child:Padding(padding:EdgeInsets.fromLTRB(0,8,0,5),
                                       child:Text(
-                                        ": Apr 2026",
+                                        ": $leadSubsource",
                                         style:TextStyle(
                                           fontSize:15,
                                         fontWeight:FontWeight.w600,
@@ -651,7 +723,7 @@ class _LeadSummaryState extends State<LeadSummary> {
                                      Expanded(
                                       child:Padding(padding:EdgeInsets.fromLTRB(0,8,0,5),
                                       child:Text(
-                                        ": Created 2 week 5 days 8 hours,20 minutes ago.",
+                                        ":$leadAging",
                                         style:TextStyle(
                                           fontSize:15,
                                         fontWeight:FontWeight.w600,
@@ -725,7 +797,7 @@ class _LeadSummaryState extends State<LeadSummary> {
                                             EdgeInsets.symmetric(
                                                 vertical: 5),
                                         child: Text(
-                                          ": Renewal",
+                                          ": $businessType",
                                           style: TextStyle(
                                             fontSize: 15,
                                             fontWeight:
@@ -766,7 +838,7 @@ class _LeadSummaryState extends State<LeadSummary> {
                                             EdgeInsets.fromLTRB(
                                                 0, 8, 0, 5),
                                         child: Text(
-                                          ": Not Available",
+                                          ": $leadRating",
                                           style: TextStyle(
                                             fontSize: 15,
                                             fontWeight:
@@ -801,7 +873,7 @@ class _LeadSummaryState extends State<LeadSummary> {
                                      Expanded(
                                       child:Padding(padding:EdgeInsets.fromLTRB(0,8,0,5),
                                       child:Text(
-                                        ": Not Available",
+                                        ": $breaking",
                                         style:TextStyle(
                                           fontSize:15,
                                         fontWeight:FontWeight.w600,
@@ -833,7 +905,7 @@ class _LeadSummaryState extends State<LeadSummary> {
                                      Expanded(
                                       child:Padding(padding:EdgeInsets.fromLTRB(0,8,0,5),
                                       child:Text(
-                                        ": 749856483892738467",
+                                        ": $prevPolicyNo",
                                         style:TextStyle(
                                           fontSize:15,
                                         fontWeight:FontWeight.w600,
@@ -866,7 +938,7 @@ class _LeadSummaryState extends State<LeadSummary> {
                                      Expanded(
                                       child:Padding(padding:EdgeInsets.fromLTRB(0,8,0,5),
                                       child:Text(
-                                        ": Not Available",
+                                        ": $webQuotes",
                                         style:TextStyle(
                                           fontSize:15,
                                         fontWeight:FontWeight.w600,

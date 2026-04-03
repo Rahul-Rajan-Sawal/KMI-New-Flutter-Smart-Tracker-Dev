@@ -1,6 +1,32 @@
 import 'dart:convert';
 
 class ApiRequestBuilder {
+  static Map<String, dynamic> buildSearchLeadRequest({
+    required String sapCode,
+    required String leadNo,
+    required String policyNo,
+    required String tokenId,
+    required String callerId,
+    required String callerPass,
+  }) {
+    return {
+      //    "objSearchLead": {
+      //   "SAPCode": sapCode,
+      //   "LeadNo": leadNo,
+      //   "PolicyNo": policyNo,
+      //   "CallerId": callerId,
+      //   "CallerPass": callerPass,
+      //   "TokenId": tokenId,
+      // }
+      "UserId": sapCode,
+      "LeadNo": leadNo,
+      "PolicyNo": policyNo,
+      "CallerId": callerId,
+      "CallerPass": callerPass,
+      "TokenId": tokenId,
+    };
+  }
+
   static String authenticateUserWithAppVersionn({
     required String userId,
     required String password,
@@ -94,4 +120,76 @@ class ApiRequestBuilder {
       "TokenId": TokenId,
     };
   }
+
+  static Map<String, dynamic> getCallDownTime({
+    required String SAPCode,
+    required String SrvcReqDtlCode,
+    String? CallerId,
+    String? CallerPass,
+    String? TokenId,
+  }) {
+    return {
+      "UserId": SAPCode,
+      "SrvcReqDtlCode": SrvcReqDtlCode,
+      "CallerId": CallerId,
+      "CallerPass": CallerPass,
+      "TokenId": TokenId,
+    };
+  }
+
+
+static Map<String, dynamic> bridgeCall({
+  required String reqSystemCampaign,
+  required String systemUniqueNo,
+  required String smMobileNo,
+  required String custMobileNo,
+  required String systemEvent,
+  required String systemName,
+  required String msgToPlay,
+  required String leadNo,
+  required String sapCode,
+}) {
+  return {
+    "reqeusting_system_campaign": reqSystemCampaign,
+    "system_UniqueNo": systemUniqueNo,
+    "cust_mobile_no": smMobileNo,
+    "cust_mobile_no_2": custMobileNo,
+    "system_event": systemEvent,
+    "system_name": systemName,
+    "msg_to_play": msgToPlay,
+    "LeadNo": leadNo,
+    "UserId": sapCode,
+  };
+}
+
+  // static Map<String, dynamic> bridgeCall({
+  //   required String reqSystemCampaign,
+  //   required String systemUniqueNo,
+  //   required String smMobileNo,
+  //   required String custMobileNo,
+  //   required String systemEvent,
+  //   required String systemName,
+  //   required String msgToPlay,
+  //   required String leadNo,
+  //   required String sapCode,
+  //   String? callerId,
+  //   String? callerPass,
+  //   String? tokenId,
+  // }) {
+  //   return {
+  //     "Req_system_campaign": reqSystemCampaign,
+  //     "System_UniqueNo": systemUniqueNo,
+  //     "SMMobileNo": smMobileNo,
+  //     "CustMobileNo": custMobileNo,
+  //     "System_event": systemEvent,
+  //     "SystemName": systemName,
+  //     "MsgToPlay": msgToPlay,
+  //     "LeadNo": leadNo,
+  //     "UserId": sapCode,
+  //     "CallerId": callerId,
+  //     "CallerPass": callerPass,
+  //     "TokenId": tokenId,
+  //   };
+  // }
+
 }
