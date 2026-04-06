@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 
-class LeadUpdate extends StatefulWidget {
+class LeadUpdateNew extends StatefulWidget {
   final Map<String, dynamic> lead;
 
-  const LeadUpdate({Key? key, required this.lead}) : super(key: key);
+  const LeadUpdateNew({Key? key, required this.lead}) : super(key: key);
 
   @override
   _LeadUpdateState createState() => _LeadUpdateState();
 }
 
-class _LeadUpdateState extends State<LeadUpdate> {
+class _LeadUpdateState extends State<LeadUpdateNew> {
   String? selectedActivity;
   String? selectedSubActivity;
 
