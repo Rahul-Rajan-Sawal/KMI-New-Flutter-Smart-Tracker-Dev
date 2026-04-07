@@ -226,7 +226,7 @@ class _ViewDetailsState extends State<ViewDetails> {
                                         srvcReqDtlCode: leadId,
                                       );
 
-                                      if (isAllowed) {
+                                      if (!isAllowed) {
                                         showDialog(
                                           context: context,
                                           builder: (context) {
