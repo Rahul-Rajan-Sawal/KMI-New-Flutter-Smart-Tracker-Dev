@@ -498,9 +498,7 @@ CREATE TABLE IF NOT EXISTS LMSLeadActivityTracker(
  
 ''';
 
-
-
-static const  CreateTbl_CBFrmMSTLOB ='''
+  static const CreateTbl_CBFrmMSTLOB = '''
 CREATE TABLE IF NOT EXISTS CBFrmMSTLOB(
             RecID INTEGER,
             LOBCode TEXT PRIMARY KEY,
@@ -517,14 +515,14 @@ CREATE TABLE IF NOT EXISTS CBFrmMSTLOB(
             CeasedDTim varchar
 )''';
 
-//Drop tbl
- static const dropCreateTbl_CBFrmMSTLOB = '''
+  //Drop tbl
+  static const dropCreateTbl_CBFrmMSTLOB = '''
   DROP TABLE IF EXISTS CBFrmMSTLOB
 ''';
 
-//Create tbl
+  //Create tbl
 
-static const CreateTbl_CBFrmMSTProduct ='''
+  static const CreateTbl_CBFrmMSTProduct = '''
   CREATE TABLE IF NOT EXISTS CBFrmMSTProduct(
             RecID INTEGER,
             ProdCode TEXT PRIMARY KEY,
@@ -541,14 +539,12 @@ static const CreateTbl_CBFrmMSTProduct ='''
             UpdateDTim varchar            
 )''';
 
-//Drop tbl
- static const dropCreateTbl_CBFrmMSTProduct = '''
+  //Drop tbl
+  static const dropCreateTbl_CBFrmMSTProduct = '''
   DROP TABLE IF EXISTS CBFrmMSTProduct
 ''';
 
-
-
-static const CreateTbl_CBLMSMSTActivity ='''
+  static const CreateTbl_CBLMSMSTActivity = '''
 CREATE TABLE IF NOT EXISTS CBLMSMSTActivity(
             Recid INTEGER,
             ActivityCode TEXT PRIMARY KEY,
@@ -567,12 +563,11 @@ CREATE TABLE IF NOT EXISTS CBLMSMSTActivity(
             UpdateDTim varchar)
 ''';
 
- static const dropCreateTbl_CBLMSMSTActivity = '''
+  static const dropCreateTbl_CBLMSMSTActivity = '''
   DROP TABLE IF EXISTS CBLMSMSTActivity
 ''';
 
-
-static const CreateTBL_CUSTOMER_CNT_DTLS ='''
+  static const CreateTBL_CUSTOMER_CNT_DTLS = '''
 CREATE TABLE IF NOT EXISTS TBL_CUSTOMER_CNT_DTLS(
  REC_ID integer primary key autoincrement,
         Cust_Name TEXT,
@@ -595,8 +590,34 @@ CREATE TABLE IF NOT EXISTS TBL_CUSTOMER_CNT_DTLS(
 
 ''';
 
-
- static const dropTBL_CUSTOMER_CNT_DTLS = '''
+  static const dropTBL_CUSTOMER_CNT_DTLS = '''
   DROP TABLE IF EXISTS TBL_CUSTOMER_CNT_DTLS
 ''';
+
+  static const CreateTBL_AGENT_CNT_DTLS = '''
+ CREATE TABLE IF NOT EXISTS TBL_AGENT_CNT_DTLS(
+    REC_ID INTEGER PRIMARY KEY AUTOINCREMENT,
+    POLICY_NO TEXT,
+    IMD_CODE TEXT,
+    INTERMEDIARY_TYPE TEXT,
+    IMD_NAME TEXT,
+    MOBILE_NO TEXT,
+    EMAIL_ID TEXT,
+    IS_PRIMARY_MOBILE TEXT,
+    IS_PRIMARY_EMAIL TEXT,
+    STATUS TEXT,
+    SRC TEXT,
+    CREATEDBY TEXT,
+    CREATEDDTIME TEXT,
+    DateInLong INTEGER,
+    UPDATEDBY TEXT,
+    UPDATEDDTIME TEXT,
+    UserId TEXT,
+    SyncStatus TEXT
+)
+''';
+
+  static const dropTBL_AGENT_CNT_DTLS = '''
+    DROP TABLE IF EXISTS TBL_AGENT_CNT_DTLS
+    ''';
 }

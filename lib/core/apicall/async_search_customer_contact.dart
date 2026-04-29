@@ -16,36 +16,33 @@ Future<Map<String, dynamic>> searchCustomerContact({
   String responseBody = "";
 
   try {
-
     final requestJson = ApiRequestBuilder.buildSearchLeadRequest(
-       sapCode: sapCode,
-        leadNo: leadNo,
-        policyNo: policyNo,
-        tokenId: StaticVariables.TokenId,
-        callerId: StaticVariables.callerId,
-        callerPass: StaticVariables.callerPass!,
+      sapCode: sapCode,
+      leadNo: leadNo,
+      policyNo: policyNo,
+      tokenId: StaticVariables.TokenId,
+      callerId: StaticVariables.callerId,
+      callerPass: StaticVariables.callerPass!,
     );
 
     final responseString = await EncryptedHttpservice.post(
-      url:"${StaticVariables.baseUrl}/${StaticVariables.SearchLead}", 
-     requestJson: requestJson
+      url: "${StaticVariables.baseUrl}/${StaticVariables.SearchLead}",
+      requestJson: requestJson,
     );
+    print(requestJson);
 
     responseBody = responseString;
     final decoded = jsonDecode(responseBody);
-      if (decoded["Table"] != null && decoded["Table"].length > 0) {
+    if (decoded["Table"] != null && decoded["Table"].length > 0) {
       final first = decoded["Table"][0];
 
       if (first["ResponseCode"] == "1" || first["ResponseCode"] == "2") {
         print(first);
-        return {
-          "response": responseBody,
-          "errorFlag": "error", 
-        };
+        return {"response": responseBody, "errorFlag": "error"};
       }
     }
 
-  final repo = CustomerContactRepository();
+    final repo = CustomerContactRepository();
     isSearched = await repo.parseAndStoreCustomerContacts(responseBody);
 
     errorFlag = isSearched ? "success" : "error";
@@ -54,9 +51,6 @@ Future<Map<String, dynamic>> searchCustomerContact({
     print("Error in searchCustomerContact: $e");
   }
 
-
-  return {
-    "response": responseBody,
-    "errorFlag": errorFlag,
-  };
+  print(responseBody);
+  return {"response": responseBody, "errorFlag": errorFlag};
 }

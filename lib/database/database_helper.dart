@@ -39,9 +39,13 @@ class DatabaseHelper {
       await db.execute(DbTables.createTbl_DashboardData_Mob);
       await db.execute(DbTables.createTbl_TeamDashboardData_Mob);
       await db.execute(DbTables.CreateTbl_CBFrmMSTLOB);
-      await db.execute(DbTables.CreateTbl_CBFrmMSTProduct);      
+      await db.execute(DbTables.CreateTbl_CBFrmMSTProduct);
       await db.execute(DbTables.CreateTBL_CUSTOMER_CNT_DTLS);
-      print("**********************Tables Created---------------------------@@");
+      await db.execute(DbTables.CreateTBL_AGENT_CNT_DTLS);
+      print("Table Created TBL_AGENT_CNT_DTLS");
+      print(
+        "**********************Tables Created---------------------------@@",
+      );
     } catch (e) {
       print("exception catched :  $e");
     }
@@ -50,26 +54,25 @@ class DatabaseHelper {
     await db.execute(DbTables.lmsLeadActivityTracker);
   }
 
-Future<void> resetLeadTables() async {
-  final db = await database;
+  Future<void> resetLeadTables() async {
+    final db = await database;
 
-  try {
-    await db.transaction((txn) async {
-      // 1. Drop tables
-      await txn.execute(DbTables.dropLeadDetails);
-      await txn.execute(DbTables.dropLMSLeadActivityTracker);
+    try {
+      await db.transaction((txn) async {
+        // 1. Drop tables
+        await txn.execute(DbTables.dropLeadDetails);
+        await txn.execute(DbTables.dropLMSLeadActivityTracker);
 
-      // 2. Recreate tables
-      await txn.execute(DbTables.ceadDetails); // LeadDetails
-      await txn.execute(DbTables.lmsLeadActivityTracker);
-    });
+        // 2. Recreate tables
+        await txn.execute(DbTables.ceadDetails); // LeadDetails
+        await txn.execute(DbTables.lmsLeadActivityTracker);
+      });
 
-    print("Lead tables reset successfully ");
-  } catch (e) {
-    print("Error resetting lead tables : $e");
+      print("Lead tables reset successfully ");
+    } catch (e) {
+      print("Error resetting lead tables : $e");
+    }
   }
-}
-
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     await db.execute(DbTables.dropUserTable);
@@ -79,6 +82,7 @@ Future<void> resetLeadTables() async {
     await db.execute(DbTables.dropCalendarData_Mob);
     await db.execute(DbTables.dropTeamDashboardData_Mob);
     await db.execute(DbTables.dropTBL_CUSTOMER_CNT_DTLS);
+    await db.execute(DbTables.dropTBL_AGENT_CNT_DTLS);
     await _onCreate(db, newVersion);
   }
 
@@ -94,9 +98,8 @@ Future<void> resetLeadTables() async {
       limit: 1,
     );
     if (result.isNotEmpty) {
-      return result.first; 
+      return result.first;
     }
     return null;
   }
-
 }

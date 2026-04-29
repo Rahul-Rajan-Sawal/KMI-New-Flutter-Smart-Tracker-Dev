@@ -19,7 +19,13 @@ class StaticVariables {
   static const String authenticateUser = "AuthenticateUser_WithAppVersion",
       getSearchData = "GetSearchData",
       GetDashboardData = "GetDashboardData",
-      bridgeCallDtls="bridgeCallDtls";
+      bridgeCallDtls = "bridgeCallDtls",
+      SearchAgent = "SearchAgent",
+      GetLeadDetails = "GetLeadDetails",
+      MarkPrimaryContact = "MarkPrimaryContact",
+      SubmitAgntContact = "SubmitAgntContact",
+      SubmitCustContact = "SubmitCustContact",
+      GetCalendarData = "GetCalendarData";
 
   static const String BridgeCallDtls = "BridgeCallDtls";
 
@@ -40,7 +46,7 @@ class StaticVariables {
   static String? authorization;
   static String? callerPass;
 
-  // static String CallerPass = "";
+  //static String CallerPass = "";
   static String TokenId = "";
   static String mSAPCode = "";
   static String mBranchName = "";

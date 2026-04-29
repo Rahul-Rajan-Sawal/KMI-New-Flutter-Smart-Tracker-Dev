@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:flutter_bottom_nav/core/static_variables.dart';
+
 class ApiRequestBuilder {
   static Map<String, dynamic> buildSearchLeadRequest({
     required String sapCode,
@@ -137,59 +139,176 @@ class ApiRequestBuilder {
     };
   }
 
+  static Map<String, dynamic> bridgeCall({
+    required String reqSystemCampaign,
+    required String systemUniqueNo,
+    required String smMobileNo,
+    required String custMobileNo,
+    required String systemEvent,
+    required String systemName,
+    required String msgToPlay,
+    required String leadNo,
+    required String sapCode,
+  }) {
+    return {
+      "reqeusting_system_campaign": reqSystemCampaign,
+      "system_UniqueNo": systemUniqueNo,
+      "cust_mobile_no": smMobileNo,
+      "cust_mobile_no_2": custMobileNo,
+      "system_event": systemEvent,
+      "system_name": systemName,
+      "msg_to_play": msgToPlay,
+      "LeadNo": leadNo,
+      "UserId": sapCode,
+    };
+  }
 
-static Map<String, dynamic> bridgeCall({
-  required String reqSystemCampaign,
-  required String systemUniqueNo,
-  required String smMobileNo,
-  required String custMobileNo,
-  required String systemEvent,
-  required String systemName,
-  required String msgToPlay,
-  required String leadNo,
-  required String sapCode,
-}) {
-  return {
-    "reqeusting_system_campaign": reqSystemCampaign,
-    "system_UniqueNo": systemUniqueNo,
-    "cust_mobile_no": smMobileNo,
-    "cust_mobile_no_2": custMobileNo,
-    "system_event": systemEvent,
-    "system_name": systemName,
-    "msg_to_play": msgToPlay,
-    "LeadNo": leadNo,
-    "UserId": sapCode,
-  };
-}
-
-  // static Map<String, dynamic> bridgeCall({
-  //   required String reqSystemCampaign,
-  //   required String systemUniqueNo,
-  //   required String smMobileNo,
-  //   required String custMobileNo,
-  //   required String systemEvent,
-  //   required String systemName,
-  //   required String msgToPlay,
-  //   required String leadNo,
-  //   required String sapCode,
-  //   String? callerId,
+  // static Map<String, dynamic> SearchAgentContact({
+  //   String? ErrorFlag,
+  //   //required String strResponse,
+  //   required String SAPCode,
+  //   required String IMDType,
+  //   required String IMDValue,
+  //   String? CallerId,
   //   String? callerPass,
-  //   String? tokenId,
+  //   String? TokenId,
   // }) {
   //   return {
-  //     "Req_system_campaign": reqSystemCampaign,
-  //     "System_UniqueNo": systemUniqueNo,
-  //     "SMMobileNo": smMobileNo,
-  //     "CustMobileNo": custMobileNo,
-  //     "System_event": systemEvent,
-  //     "SystemName": systemName,
-  //     "MsgToPlay": msgToPlay,
-  //     "LeadNo": leadNo,
-  //     "UserId": sapCode,
-  //     "CallerId": callerId,
-  //     "CallerPass": callerPass,
-  //     "TokenId": tokenId,
+  //     "UserId": SAPCode,
+  //     "IMDType": IMDType,
+  //     "IMDValue": IMDValue,
+  //     "CallerId": CallerId,
+  //     "callerPass": callerPass,
+  //     "TokenId": TokenId,
   //   };
   // }
 
+  static Map<String, dynamic> SearchAgentContact({
+    required String SAPCode,
+    required String IMDType,
+    required String IMDValue,
+    String? CallerId,
+    String? callerPass,
+    String? TokenId,
+  }) {
+    return {
+      "UserId": SAPCode,
+      "IMDType": IMDType,
+      "IMDValue": IMDValue,
+      "CallerId": CallerId,
+      "CallerPass": callerPass,
+      "TokenId": TokenId,
+    };
+  }
+
+  static Map<String, dynamic> SearchCustomerContact({
+    required String SAPCode,
+    required String mLeadNo,
+    required String mPolicyNo,
+  }) {
+    return {
+      "UserId": SAPCode,
+      "LeadNo": mLeadNo,
+      "PolicyNo": mPolicyNo,
+      "CallerId": StaticVariables.callerId,
+      "CallerPass": StaticVariables.callerPass,
+      "TokenId": StaticVariables.TokenId,
+    };
+  }
+
+  static Map<String, dynamic> MarkPrimaryContact({
+    required String SAPCode,
+    required String ProgramFlag,
+    required String ParamValue,
+    required String MobileNo,
+    required String EmailID,
+    required String IsPrimaryMobile,
+    required String IsPrimaryEmail,
+    required String CallerId,
+    required String CallerPass,
+    required String tokenId,
+  }) {
+    return {
+      "UserId": SAPCode,
+      "ParamFlag": ProgramFlag,
+      "ParamValue": ParamValue,
+      "MobileNo": MobileNo,
+      "EmailID": EmailID,
+      "IsPrimary": IsPrimaryMobile,
+      "IsEmailPrimary": IsPrimaryEmail,
+      "CallerId": CallerId,
+      "CallerPass": CallerPass,
+      "TokenId": tokenId,
+    };
+  }
+
+  static Map<String, dynamic> SubmitAgntContact({
+    required String sapCode,
+    required String intermediaryType,
+    required String intermediaryValue,
+    required String intermediaryName,
+    required String contactNo,
+    required String emailId,
+    required String isPrimaryMobile,
+    required String isPrimaryEmail,
+    required String callerId,
+    required String callerPass,
+    required String tokenId,
+  }) {
+    return {
+      "UserId": sapCode,
+      "IMDType": intermediaryType,
+      "IMDValue": intermediaryValue,
+      "IMGName": intermediaryName,
+      "MobileNo": contactNo,
+      "EmailID": emailId,
+      "IsPrimary": isPrimaryMobile,
+      "IsEmailPrimary": isPrimaryEmail,
+      "CallerId": callerId,
+      "CallerPass": callerPass,
+      "TokenId": tokenId,
+    };
+  }
+
+  static Map<String, dynamic> submitCustomerContact({
+    required String sapCode,
+    required String leadNo,
+    required String policyNo,
+    required String contactNo,
+    required String emailId,
+    required String isPrimaryMobile,
+    required String isPrimaryEmail,
+    String? callerId,
+    String? callerPass,
+    required String tokenId,
+  }) {
+    return {
+      "UserId": sapCode,
+      "LeadNo": leadNo,
+      "PolicyNo": policyNo,
+      "ContactNo": contactNo,
+      "EmailId": emailId,
+      "IsPrimary": isPrimaryMobile,
+      "IsPrimaryEmail": isPrimaryEmail,
+      "CallerId": callerId,
+      "CallerPass": callerPass,
+      "TokenId": tokenId,
+    };
+  }
+
+  static Map<String, dynamic> GetCalendarData({
+    required String sapCode,
+    required String dayFirst,
+    required String callerId,
+    required String callerPass,
+    required String tokenId,
+  }) {
+    return {
+      "UserId": sapCode,
+      "Date": "$dayFirst-01",
+      "CallerId": callerId,
+      "CallerPass": callerPass,
+      "TokenId": tokenId,
+    };
+  }
 }
