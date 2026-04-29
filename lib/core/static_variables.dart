@@ -19,6 +19,12 @@ class StaticVariables {
   static const String authenticateUser = "AuthenticateUser_WithAppVersion",
       getSearchData = "GetSearchData",
       GetDashboardData = "GetDashboardData",
+     
+      SearchAgent = "SearchAgent",
+      GetLeadDetails = "GetLeadDetails",
+      MarkPrimaryContact = "MarkPrimaryContact",
+      SubmitAgntContact = "SubmitAgntContact",
+      SubmitCustContact = "SubmitCustContact",
       bridgeCallDtls="bridgeCallDtls",
       GetMstMapping="GetMstMapping",
       getLastActivityForLead="GetLastActivityForLead",
