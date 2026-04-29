@@ -18,6 +18,7 @@ class LeadRepository {
   //         ["Name", "ProdName", "SrvcReqDtlCode"] // default columns
   //   });
   // }
+  
   static Future<List<Map<String, dynamic>>> fetchDecryptedLeads(
       {List<String>? columnsToDecrypt}) async {
     final db = await DatabaseHelper.instance.database;

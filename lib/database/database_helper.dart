@@ -41,6 +41,8 @@ class DatabaseHelper {
       await db.execute(DbTables.CreateTbl_CBFrmMSTLOB);
       await db.execute(DbTables.CreateTbl_CBFrmMSTProduct);      
       await db.execute(DbTables.CreateTBL_CUSTOMER_CNT_DTLS);
+      await db.execute(DbTables.createTbl_CalendarData_Mob);
+      await db.execute(DbTables.createNotificationDetails);
       print("**********************Tables Created---------------------------@@");
     } catch (e) {
       print("exception catched :  $e");
@@ -79,6 +81,8 @@ Future<void> resetLeadTables() async {
     await db.execute(DbTables.dropCalendarData_Mob);
     await db.execute(DbTables.dropTeamDashboardData_Mob);
     await db.execute(DbTables.dropTBL_CUSTOMER_CNT_DTLS);
+    await db.execute(DbTables.dropTBL_CUSTOMER_CNT_DTLS);
+    await db.execute(DbTables.dropNotificationDetails);
     await _onCreate(db, newVersion);
   }
 

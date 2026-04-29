@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bottom_nav/common/common_util.dart';
+import 'package:flutter_bottom_nav/core/apicall/async_get_Mstdata.dart';
 import 'package:flutter_bottom_nav/core/apicall/authenticate_user.dart';
 import 'package:flutter_bottom_nav/core/static_variables.dart';
 import 'package:flutter_bottom_nav/database/database_helper.dart';
 import 'package:flutter_bottom_nav/navigation/main_screen.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:intl/intl.dart';
 
 class LoginActivity extends StatefulWidget {
   @override
@@ -349,16 +351,33 @@ class _LoginActivityState extends State<LoginActivity> {
                           ),
                         };
 
-                       try{
-                        final db = await DatabaseHelper.instance.database;
-                        await db.delete("iUser");
-                        await db.insert("iUser", userData);
-                        }catch(e){
+                        try {
+                          final db = await DatabaseHelper.instance.database;
+                          await db.delete("iUser");
+                          await db.insert("iUser", userData);
+
+                          CommonUtil.show(
+                            context,
+                            message: "Syncing masters...",
+                          );
+
+
+                          // call api for master data                       
+                          final mastersSynced = await MastersMappingApi.call(
+                            userId: userId,
+                           // LastSyncDate: DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now()),
+                            //lastSyncDate: DateTime.now().toIso8601String(),
+                          );
+
+                          CommonUtil.hide(context);
+                        } catch (e) {
                           print(e);
                         }
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (_) => MainScreen(user: userId,)),
+                          MaterialPageRoute(
+                            builder: (_) => MainScreen(user: userId),
+                          ),
                         );
                       }
 
