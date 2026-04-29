@@ -46,6 +46,9 @@ class DatabaseHelper {
       print(
         "**********************Tables Created---------------------------@@",
       );
+      await db.execute(DbTables.createTbl_CalendarData_Mob);
+      await db.execute(DbTables.createNotificationDetails);
+      print("**********************Tables Created---------------------------@@");
     } catch (e) {
       print("exception catched :  $e");
     }
@@ -83,6 +86,8 @@ class DatabaseHelper {
     await db.execute(DbTables.dropTeamDashboardData_Mob);
     await db.execute(DbTables.dropTBL_CUSTOMER_CNT_DTLS);
     await db.execute(DbTables.dropTBL_AGENT_CNT_DTLS);
+    await db.execute(DbTables.dropTBL_CUSTOMER_CNT_DTLS);
+    await db.execute(DbTables.dropNotificationDetails);
     await _onCreate(db, newVersion);
   }
 

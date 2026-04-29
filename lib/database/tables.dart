@@ -620,4 +620,108 @@ CREATE TABLE IF NOT EXISTS TBL_CUSTOMER_CNT_DTLS(
   static const dropTBL_AGENT_CNT_DTLS = '''
     DROP TABLE IF EXISTS TBL_AGENT_CNT_DTLS
     ''';
+  // Master Tables Setup
+
+  static const createCBLMSChnlSourceMapping = '''
+CREATE TABLE IF NOT EXISTS CBLMSChnlSourceMapping(
+  ChnlSrvcMapCode TEXT,
+  ReqChannelId TEXT,
+  ReqChannelDesc TEXT,
+  LeadSourceId TEXT,
+  LeadSourceDesc TEXT,
+  LeadSubSourceId TEXT,
+  LeadSubSourceDesc TEXT,
+  isActive TEXT,
+  CreateBy TEXT,
+  CreateDtim TEXT
+);
+''';
+
+  static const dropcreateCBLMSChnlSourceMapping = '''
+  DROP TABLE IF EXISTS CBLMSChnlSourceMapping
+''';
+
+  static const createCBFrmLOBProdMapping = '''
+CREATE TABLE IF NOT EXISTS CBFrmLOBProdMapping(
+  LOBProdMapCode TEXT,
+  LOBCode TEXT,
+  ProdCode TEXT,
+  BrochureURL TEXT,
+  WebQuoteURL TEXT,
+  isRequiredPreInsp TEXT,
+  CreatedBy TEXT,
+  CreateDTim TEXT,
+  IsRetail TEXT,
+  RenewalRDLC TEXT,
+  RDLCURL TEXT,
+  RDLCServer TEXT,
+  IsActive TEXT
+);
+''';
+
+  static const dropcreateCBFrmLOBProdMapping = '''
+  DROP TABLE IF EXISTS CBFrmLOBProdMapping
+''';
+
+  static const createCBLMSLeadActivityMapping = '''
+CREATE TABLE IF NOT EXISTS CBLMSLeadActivityMapping(
+  ActMapCode TEXT,
+  LeadType TEXT,
+  Biztype TEXT,
+  Actvitycode TEXT,
+  IssActivity TEXT,
+  CreatedBy TEXT,
+  CreateDTim TEXT,
+  LeadSourceId TEXT,
+  ReqChannelId TEXT
+);
+''';
+
+  static const dropcreateCBLMSLeadActivityMapping = '''
+  DROP TABLE IF EXISTS CBLMSLeadActivityMapping
+''';
+
+  static const createReqChannelLeadSourceMap = '''
+CREATE TABLE IF NOT EXISTS CBFRMLmsReqChannelLeadSourceMaping(
+  ReqChannelId TEXT,
+  LeadSourceId TEXT,
+  MstrModuleCode TEXT,
+  CreatedBy TEXT,
+  CreatedDate TEXT
+);
+''';
+
+  static const dropcreateReqChannelLeadSourceMap = '''
+  DROP TABLE IF EXISTS CBFRMLmsReqChannelLeadSourceMaping
+''';
+
+  static const createReqChannelMap = '''
+CREATE TABLE IF NOT EXISTS CBFRMLmsReqChannelMaping(
+  ReqChannelId TEXT,
+  MstrModuleCode TEXT,
+  CreatedBy TEXT,
+  CreatedDate TEXT
+);
+''';
+  static const dropcreateReqChannelMap = '''
+  DROP TABLE IF EXISTS CBFRMLmsReqChannelMaping
+''';
+
+  static const createNotificationDetails = '''
+CREATE TABLE IF NOT EXISTS NotificationDetails(
+    RecId INTEGER PRIMARY KEY AUTOINCREMENT,
+    UserId TEXT,
+    Notification TEXT,
+    DateTime TEXT,
+    Module TEXT,
+    CreateBy TEXT,
+    CreateDTim TEXT,
+    Remark1 TEXT,
+    Remark2 TEXT
+);
+''';
+
+  static const dropNotificationDetails = '''
+DROP TABLE IF EXISTS NotificationDetails
+''';
 }

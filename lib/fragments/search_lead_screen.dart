@@ -47,21 +47,23 @@ class _SearchFragmentState extends State<SearchFragment> {
   String? AllVerticalCode;
   //Dropdown
   String? selectedLOBCode;
-String? selectedProdCode;
+  String? selectedProdCode;
 
   List<String> arrLOBDesc = [];
-List<String> arrLOBCode = [];
+  List<String> arrLOBCode = [];
 
-List<String> arrProductDesc = [];
-List<String> arrProductCode = [];
+  List<String> arrProductDesc = [];
+  List<String> arrProductCode = [];
 
+  List<String> arrAgentDesc = [];
+  List<String> arrAgentCode = [];
 
-List<String> arrAgentDesc = [];
-List<String> arrAgentCode = [];
+  List<String> arrVerticalDesc = [];
+  List<String> arrVerticalCode = [];
 
-List<String> arrVerticalDesc = [];
-List<String> arrVerticalCode = [];
-
+  //Added By Manish
+  List<String> arrHNINDesc = [];
+  List<String> arrHNINCode = []; //end
 
   List<String> dropdownData = [];
   bool loading = true;
@@ -69,19 +71,61 @@ List<String> arrVerticalCode = [];
   @override
   void initState() {
     super.initState();
-      
-      loadLOB(); // load from offline DB
 
-//    loadDropdownData();
+    loadLOB(); // load from offline DB
+    
+    //    loadDropdownData();
     checkTables();
   }
 
-// final int lobb=2;
-//   Future<void> loadDropdownData() async {
-//     setState(() {
-//       loading = false;
-//     });
-//   }
+  //Added By Manish need to change
+  Future<void> loadAgentsAndHNIN() async {
+    final data = await LeadRepository.fetchDecryptedLeads(
+      columnsToDecrypt: ["AgentName", "AgentCode", "HNINName", "HNINCode"],
+      
+    );
+    print(data);
+    List<String> tempAgentDesc = [];
+    List<String> tempAgentCode = [];
+
+    List<String> tempHNINDesc = [];
+    List<String> tempHNINCode = [];
+
+    for (var row in data) {
+      if (row["AgentName"] != null && row["AgentCode"] != null) {
+        String name = row["AgentName"];
+        String code = row["AgentCode"];
+
+        if (!tempAgentCode.contains(code)) {
+          tempAgentDesc.add(name);
+          tempAgentCode.add(code);
+        }
+        if (row["HNINName"] != null && row["HNINCode"] != null) {
+          String name = row["HNINName"];
+          String code = row["HNINCode"];
+
+          if (!tempHNINCode.contains(code)) {
+            tempHNINDesc.add(name);
+            tempHNINCode.add(code);
+          }
+        }
+      }
+    }
+    setState(() {
+      arrAgentDesc = tempAgentDesc;
+      arrAgentCode = tempAgentCode;
+
+      arrVerticalDesc = tempHNINDesc;
+      arrVerticalCode = tempHNINCode;
+    });
+  }
+
+  // final int lobb=2;
+  //   Future<void> loadDropdownData() async {
+  //     setState(() {
+  //       loading = false;
+  //     });
+  //   }
 
   //for date controlls
   Future<void> pickDate(TextEditingController dtcontroller) async {
@@ -134,12 +178,11 @@ List<String> arrVerticalCode = [];
   //Api call save start Batch batch,
   Future<void> saveLeadFromApi(Map<String, dynamic> json) async {
     print("Db creating inserting function called here");
-//    Commied for Batch
+    //    Commied for Batch
     final db = await DatabaseHelper.instance.database;
 
     String srvcReqCode = json["SrvcReqDtlCode"].toString();
 
-   
     //test
     Map<String, dynamic> leadDetails = {
       "SrvcReqDtlCode": CommonUtil.encryptIfNotEmpty(srvcReqCode),
@@ -638,20 +681,20 @@ List<String> arrVerticalCode = [];
 
     print("Saving Lead: ${json["SrvcReqDtlCode"]}");
 
-//Save Lead Batch
-  // batch.insert(
-  //   "LeadDetails",
-  //   leadDetails,
-  //   conflictAlgorithm: ConflictAlgorithm.replace,
-  // );
+    //Save Lead Batch
+    // batch.insert(
+    //   "LeadDetails",
+    //   leadDetails,
+    //   conflictAlgorithm: ConflictAlgorithm.replace,
+    // );
 
-  // batch.insert(
-  //   "LMSLeadActivityTracker",
-  //   activityTracker,
-  //   conflictAlgorithm: ConflictAlgorithm.replace,
-  // );
+    // batch.insert(
+    //   "LMSLeadActivityTracker",
+    //   activityTracker,
+    //   conflictAlgorithm: ConflictAlgorithm.replace,
+    // );
 
-   // LeadDetails
+    // LeadDetails
     await db.insert(
       "LeadDetails",
       leadDetails,
@@ -682,7 +725,6 @@ List<String> arrVerticalCode = [];
     return Scaffold(
       backgroundColor: Colors.grey[100],
       body: SingleChildScrollView(
-        
         padding: const EdgeInsets.all(15),
         child: Column(
           children: [
@@ -692,107 +734,111 @@ List<String> arrVerticalCode = [];
             const SizedBox(height: 10),
             buildTextField(MobNoCrtl, "Mobile Number "),
             const SizedBox(height: 10),
-           // buildDropdown("LOB", LOB, (v) => setState(() => LOB = v)),
-            
+
+            // buildDropdown("LOB", LOB, (v) => setState(() => LOB = v)),
             buildDropdown(
-  "LOB",
-  LOB,
-  arrLOBDesc, //  NEW (LOB data from DB)
-  (v) {
-    setState(() {
-      LOB = v;
+              "LOB",
+              LOB,
+              arrLOBDesc, //  NEW (LOB data from DB)
+              (v) {
+                setState(() {
+                  LOB = v;
 
-      //  Get selected LOB code
-      int index = arrLOBDesc.indexOf(v!);
-    //  String selectedLOBCode = arrLOBCode[index];
-        selectedLOBCode = arrLOBCode[index]; //  STORE CODE
+                  //  Get selected LOB code
+                  int index = arrLOBDesc.indexOf(v!);
+                  //  String selectedLOBCode = arrLOBCode[index];
+                  selectedLOBCode = arrLOBCode[index]; //  STORE CODE
 
+                  //  Reset product dropdown
+                  AllProd = null;
+                  arrProductDesc.clear();
 
-      //  Reset product dropdown
-      AllProd = null;
-      arrProductDesc.clear();
+                  //  Load products based on LOB
+                  loadProduct(selectedLOBCode!);
+                });
+              },
+            ),
 
-      //  Load products based on LOB
-      loadProduct(selectedLOBCode!);
-    });
-  },
-),
-
-            
             const SizedBox(height: 10),
+
             // buildDropdown(
             //   "All Products",
             //   AllProd,
             //   (v) => setState(() => AllProd = v),
             // ),
 
+            //  PRODUCT DROPDOWN (depends on LOB)
+            // buildDropdown(
+            //   "All Products",
+            //   AllProd,
+            //   arrProductDesc, // NEW (Product data)
+            //   (v) => setState(() => AllProd = v),
+            // ),
+            buildDropdown("All Products", AllProd, arrProductDesc, (v) {
+              setState(() {
+                AllProd = v;
 
-            // ✅ PRODUCT DROPDOWN (depends on LOB)
-// buildDropdown(
-//   "All Products",
-//   AllProd,
-//   arrProductDesc, // ✅ NEW (Product data)
-//   (v) => setState(() => AllProd = v),
-// ),
+                int index = arrProductDesc.indexOf(v!);
 
-buildDropdown(
-  "All Products",
-  AllProd,
-  arrProductDesc,
-  (v) {
-    setState(() {
-      AllProd = v;
-
-      int index = arrProductDesc.indexOf(v!);
-
-      if (index != -1) {
-        selectedProdCode = arrProductCode[index];
-      } else {
-        selectedProdCode = null;
-      }
-    });
-  },
-),
-const SizedBox(height: 10),
-
-// ⚠️ TEMP (still static or empty for now)
-// buildDropdown(
-//   "All Agents",
-//   AllAgents,
-//   [], // ⚠️ you haven't connected DB yet
-//   (v) => setState(() => AllAgents = v),
-// ),
-
-buildDropdown(
-  "All Agents",
-  AllAgents,
-  [],
-  (v) => setState(() => AllAgents = v),
-),
+                if (index != -1) {
+                  selectedProdCode = arrProductCode[index];
+                } else {
+                  selectedProdCode = null;
+                }
+              });
+            }),
             const SizedBox(height: 10),
-           
+
+            // ⚠️ TEMP (still static or empty for now)
             // buildDropdown(
             //   "All Agents",
             //   AllAgents,
+            //   [], // ⚠️ you haven't connected DB yet
             //   (v) => setState(() => AllAgents = v),
             // ),
+            buildDropdown(
+              "All Agents",
+              AllAgents,
+              arrAgentDesc, //Added By Manish
+              // [],
+              //   (v) => setState(() => AllAgents = v),
+              // ), //Comment by Manish
+              (v) {
+                setState(() {
+                  AllAgents = v;
+
+                  int index = arrAgentDesc.indexOf(v!);
+                  if (index != -1) {
+                    AllAgents = arrAgentCode[index];
+                  }
+                });
+              },
+
+              // const SizedBox(height: 10),
+
+              // buildDropdown(
+              //   "All Agents",
+              //   AllAgents,
+              //   (v) => setState(() => AllAgents = v),
+              // ),
+
+              // const SizedBox(height: 10),
+            ),
             
-            const SizedBox(height: 10),
+            buildDropdown(
+              "All Vertical Code",
+              // AllAgents, //Commented by Manish //need to change
+              AllVerticalCode,
+              [],
+              (v) => setState(() => AllAgents = v),
+            ),
 
-
-buildDropdown(
-  "All Vertical Code",
-  AllAgents,
-  [],
-  (v) => setState(() => AllAgents = v),
-),
-        //     buildDropdown(
-        //       "All Vertical Code",
-        //       AllVerticalCode,
-        // [], // ✅ empty list
-        //   null, // ✅ disable
-        //     ),
-
+            //     buildDropdown(
+            //       "All Vertical Code",
+            //       AllVerticalCode,
+            // [], // ✅ empty list
+            //   null, // ✅ disable
+            //     ),
             const SizedBox(height: 10),
             buildDateField("Policy End Date From", PolEndDateFrm),
             const SizedBox(height: 10),
@@ -821,7 +867,6 @@ buildDropdown(
                       elevation: 4,
                     ),
                     onPressed: () async {
-                      
                       CommonUtil.show(
                         context,
                         message: "Searching Leads On Server. Please wait..",
@@ -834,10 +879,10 @@ buildDropdown(
 
                         //Clear tables
                         await DatabaseHelper.instance.resetLeadTables();
-                       
+
                         print("STEP 2: Clearing tables...");
                         TimeLogger.log("API CALL START");
-                      
+
                         // Fetch leads data from API
                         final response = await GetSearchData.getdata(
                           SAPCode: StaticVariables.mSAPCode,
@@ -874,42 +919,42 @@ buildDropdown(
                         // Get the lead list from the response
                         List leads = response["Table"];
 
-                  //data check in list 
-                  if(leads.isEmpty || leads[0]["ResponseCode"]!=null){
-                    print("No Valid Leads");
-                    decryptedLeads =[];
-                  }else{
-                        
-                        final db = await DatabaseHelper.instance.database;
+                        //data check in list
+                        if (leads.isEmpty || leads[0]["ResponseCode"] != null) {
+                          print("No Valid Leads");
+                          decryptedLeads = [];
+                        } else {
+                          final db = await DatabaseHelper.instance.database;
 
-                        final batch = db.batch();
+                          final batch = db.batch();
 
-                       TimeLogger.log("DB INSERT START");
-                        // Loop through each lead and save it to SQLite
-                        for (var lead in leads) {
-                          // saveLeadFromApi(batch, lead); 
-                          await saveLeadFromApi(lead);
-                          print(
-                            "Lead ${lead["SrvcReqDtlCode"]} saved successfully",
-                          );
-                        }
-                        //await batch.commit(noResult: true); 
-                        
-                        TimeLogger.log("DB INSERT END");
-
-                        TimeLogger.log("DB READ START");
-                        // Fetch decrypted leads for the next screen
-                        decryptedLeads =
-                            await LeadRepository.fetchDecryptedLeads(
-                              columnsToDecrypt: [
-                                "Name",
-                                "ProdName",
-                                "SrvcReqDtlCode",
-                                "leadAmt",
-                              ],
+                          TimeLogger.log("DB INSERT START");
+                          // Loop through each lead and save it to SQLite
+                          for (var lead in leads) {
+                            // saveLeadFromApi(batch, lead);
+                            await saveLeadFromApi(lead);
+                            print(
+                              "Lead ${lead["SrvcReqDtlCode"]} saved successfully",
                             );
-                            TimeLogger.log("DB READ END");
-                  }
+                          }
+                          //await batch.commit(noResult: true);
+
+                          TimeLogger.log("DB INSERT END");
+
+                          TimeLogger.log("DB READ START");
+                          // Fetch decrypted leads for the next screen
+                          decryptedLeads =
+                              await LeadRepository.fetchDecryptedLeads(
+                                columnsToDecrypt: [
+                                  "Name",
+                                  "ProdName",
+                                  "SrvcReqDtlCode",
+                                  "leadAmt",
+                                ],
+                              );
+                          TimeLogger.log("DB READ END");
+                          loadAgentsAndHNIN(); //Added By Manish
+                        }
                       } catch (e) {
                         // Show an error message if something goes wrong
                         CommonUtil.show(
@@ -969,7 +1014,8 @@ buildDropdown(
   Widget buildDropdown(
     String labelText,
     String? value,
-    List<String> items, // ✅ NEW: added items list (earlier you didn’t have this)
+    List<String>
+    items, //added items list (earlier you didn’t have this)
     ValueChanged<String?> onChanged,
   ) {
     return Padding(
@@ -987,13 +1033,11 @@ buildDropdown(
             // items: dropdownData
             //     .map((e) => DropdownMenuItem<String>(value: e, child: Text(e)))
             //     .toList(),
-             items: items // ✅ changed (earlier: dropdownData)
-              .map((e) => DropdownMenuItem(
-                    value: e,
-                    child: Text(e),
-                  ))
-              .toList(),
-              //new change for offline lob load
+            items:
+                items // changed (earlier: dropdownData)
+                    .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                    .toList(),
+            //new change for offline lob load
             onChanged: onChanged,
             decoration: InputDecoration(
               hintText: labelText,
@@ -1040,22 +1084,24 @@ buildDropdown(
 
     print("TABLES IN DATABASE = $tables");
   }
-  
-void loadLOB() async {
-  final data = await OfflineRepository.getLOBList();
 
-  setState(() {
-    arrLOBDesc = data["desc"]!;
-    arrLOBCode = data["code"]!;
-  });
-}
+  void loadLOB() async {
+    final data = await OfflineRepository.getLOBList();
 
-void loadProduct(String selectedLOBCode) async {
-  final data = await OfflineRepository.getProductList(selectedLOBCode); // ✅ DB call
+    setState(() {
+      arrLOBDesc = data["desc"]!;
+      arrLOBCode = data["code"]!;
+    });
+  }
 
-  setState(() {
-    arrProductDesc = data["desc"]!; // ✅ fill product names
-    arrProductCode = data["code"]!; // ✅ fill product codes
-  });
-}
+  void loadProduct(String selectedLOBCode) async {
+    final data = await OfflineRepository.getProductList(
+      selectedLOBCode,
+    ); // DB call
+
+    setState(() {
+      arrProductDesc = data["desc"]!; //fill product names
+      arrProductCode = data["code"]!; //fill product codes
+    });
+  }
 }

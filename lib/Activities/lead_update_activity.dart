@@ -4,6 +4,7 @@ class LeadUpdate extends StatefulWidget {
   final Map<String, dynamic> lead;
 
   const LeadUpdate({Key? key, required this.lead}) : super(key: key);
+  
 
   @override
   _LeadUpdateState createState() => _LeadUpdateState();
@@ -46,7 +47,23 @@ class _LeadUpdateState extends State<LeadUpdate> {
       backgroundColor: Colors.grey[300],
       appBar: AppBar(
         title: const Text('Update Leads'),
-        backgroundColor: const Color(0xFF090979),
+        // backgroundColor: const Color(0xFF090979),
+         elevation: 0,
+         backgroundColor: Colors.transparent,
+          iconTheme: const IconThemeData(color: Colors.white),
+         flexibleSpace: Container
+         (
+         decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFF090979), 
+            Color(0xFF00D4FF),                 
+            ],
+            ),
+          ),
+         ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -256,14 +273,16 @@ class _LeadUpdateState extends State<LeadUpdate> {
           child: DropdownButtonFormField<String>(
             value: value,
             isExpanded: true,
+            isDense: true,
             items: items
                 .map((e) => DropdownMenuItem<String>(value: e, child: Text(e)))
                 .toList(),
             onChanged: onChanged,
             decoration: InputDecoration(
               border: InputBorder.none,
-              contentPadding: EdgeInsets.fromLTRB(12, 14, 12, 14),
+              contentPadding: EdgeInsets.fromLTRB(12, 10, 12, 10),
               hintText: hintText,
+              hintStyle: TextStyle(fontSize: 12),
             ),
           ),
         ),
@@ -318,7 +337,8 @@ class _LeadUpdateState extends State<LeadUpdate> {
         height: 48,
         child: ElevatedButton(
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF1D4ED8),
+            backgroundColor: const Color(0xFF17479E),
+            textStyle: TextStyle(color: Colors.white),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(24),
             ),
