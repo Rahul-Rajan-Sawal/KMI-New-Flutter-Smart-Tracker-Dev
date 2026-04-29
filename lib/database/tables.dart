@@ -498,9 +498,7 @@ CREATE TABLE IF NOT EXISTS LMSLeadActivityTracker(
  
 ''';
 
-
-
-static const  CreateTbl_CBFrmMSTLOB ='''
+  static const CreateTbl_CBFrmMSTLOB = '''
 CREATE TABLE IF NOT EXISTS CBFrmMSTLOB(
             RecID INTEGER,
             LOBCode TEXT PRIMARY KEY,
@@ -517,14 +515,14 @@ CREATE TABLE IF NOT EXISTS CBFrmMSTLOB(
             CeasedDTim varchar
 )''';
 
-//Drop tbl
- static const dropCreateTbl_CBFrmMSTLOB = '''
+  //Drop tbl
+  static const dropCreateTbl_CBFrmMSTLOB = '''
   DROP TABLE IF EXISTS CBFrmMSTLOB
 ''';
 
-//Create tbl
+  //Create tbl
 
-static const CreateTbl_CBFrmMSTProduct ='''
+  static const CreateTbl_CBFrmMSTProduct = '''
   CREATE TABLE IF NOT EXISTS CBFrmMSTProduct(
             RecID INTEGER,
             ProdCode TEXT PRIMARY KEY,
@@ -541,14 +539,12 @@ static const CreateTbl_CBFrmMSTProduct ='''
             UpdateDTim varchar            
 )''';
 
-//Drop tbl
- static const dropCreateTbl_CBFrmMSTProduct = '''
+  //Drop tbl
+  static const dropCreateTbl_CBFrmMSTProduct = '''
   DROP TABLE IF EXISTS CBFrmMSTProduct
 ''';
 
-
-
-static const CreateTbl_CBLMSMSTActivity ='''
+  static const CreateTbl_CBLMSMSTActivity = '''
 CREATE TABLE IF NOT EXISTS CBLMSMSTActivity(
             Recid INTEGER,
             ActivityCode TEXT PRIMARY KEY,
@@ -567,12 +563,11 @@ CREATE TABLE IF NOT EXISTS CBLMSMSTActivity(
             UpdateDTim varchar)
 ''';
 
- static const dropCreateTbl_CBLMSMSTActivity = '''
+  static const dropCreateTbl_CBLMSMSTActivity = '''
   DROP TABLE IF EXISTS CBLMSMSTActivity
 ''';
 
-
-static const CreateTBL_CUSTOMER_CNT_DTLS ='''
+  static const CreateTBL_CUSTOMER_CNT_DTLS = '''
 CREATE TABLE IF NOT EXISTS TBL_CUSTOMER_CNT_DTLS(
  REC_ID integer primary key autoincrement,
         Cust_Name TEXT,
@@ -595,8 +590,112 @@ CREATE TABLE IF NOT EXISTS TBL_CUSTOMER_CNT_DTLS(
 
 ''';
 
-
- static const dropTBL_CUSTOMER_CNT_DTLS = '''
+  static const dropTBL_CUSTOMER_CNT_DTLS = '''
   DROP TABLE IF EXISTS TBL_CUSTOMER_CNT_DTLS
+''';
+
+  // Master Tables Setup
+
+  static const createCBLMSChnlSourceMapping = '''
+CREATE TABLE IF NOT EXISTS CBLMSChnlSourceMapping(
+  ChnlSrvcMapCode TEXT,
+  ReqChannelId TEXT,
+  ReqChannelDesc TEXT,
+  LeadSourceId TEXT,
+  LeadSourceDesc TEXT,
+  LeadSubSourceId TEXT,
+  LeadSubSourceDesc TEXT,
+  isActive TEXT,
+  CreateBy TEXT,
+  CreateDtim TEXT
+);
+''';
+
+  static const dropcreateCBLMSChnlSourceMapping = '''
+  DROP TABLE IF EXISTS CBLMSChnlSourceMapping
+''';
+
+  static const createCBFrmLOBProdMapping = '''
+CREATE TABLE IF NOT EXISTS CBFrmLOBProdMapping(
+  LOBProdMapCode TEXT,
+  LOBCode TEXT,
+  ProdCode TEXT,
+  BrochureURL TEXT,
+  WebQuoteURL TEXT,
+  isRequiredPreInsp TEXT,
+  CreatedBy TEXT,
+  CreateDTim TEXT,
+  IsRetail TEXT,
+  RenewalRDLC TEXT,
+  RDLCURL TEXT,
+  RDLCServer TEXT,
+  IsActive TEXT
+);
+''';
+
+  static const dropcreateCBFrmLOBProdMapping = '''
+  DROP TABLE IF EXISTS CBFrmLOBProdMapping
+''';
+
+  static const createCBLMSLeadActivityMapping = '''
+CREATE TABLE IF NOT EXISTS CBLMSLeadActivityMapping(
+  ActMapCode TEXT,
+  LeadType TEXT,
+  Biztype TEXT,
+  Actvitycode TEXT,
+  IssActivity TEXT,
+  CreatedBy TEXT,
+  CreateDTim TEXT,
+  LeadSourceId TEXT,
+  ReqChannelId TEXT
+);
+''';
+
+  static const dropcreateCBLMSLeadActivityMapping = '''
+  DROP TABLE IF EXISTS CBLMSLeadActivityMapping
+''';
+
+  static const createReqChannelLeadSourceMap = '''
+CREATE TABLE IF NOT EXISTS CBFRMLmsReqChannelLeadSourceMaping(
+  ReqChannelId TEXT,
+  LeadSourceId TEXT,
+  MstrModuleCode TEXT,
+  CreatedBy TEXT,
+  CreatedDate TEXT
+);
+''';
+
+  static const dropcreateReqChannelLeadSourceMap = '''
+  DROP TABLE IF EXISTS CBFRMLmsReqChannelLeadSourceMaping
+''';
+
+  static const createReqChannelMap = '''
+CREATE TABLE IF NOT EXISTS CBFRMLmsReqChannelMaping(
+  ReqChannelId TEXT,
+  MstrModuleCode TEXT,
+  CreatedBy TEXT,
+  CreatedDate TEXT
+);
+''';
+  static const dropcreateReqChannelMap = '''
+  DROP TABLE IF EXISTS CBFRMLmsReqChannelMaping
+''';
+
+  static const createNotificationDetails = '''
+CREATE TABLE IF NOT EXISTS NotificationDetails(
+    RecId INTEGER PRIMARY KEY AUTOINCREMENT,
+    UserId TEXT,
+    Notification TEXT,
+    DateTime TEXT,
+    Module TEXT,
+    CreateBy TEXT,
+    CreateDTim TEXT,
+    Remark1 TEXT,
+    Remark2 TEXT
+);
+''';
+
+  static const dropNotificationDetails = '''
+DROP TABLE IF EXISTS NotificationDetails
 ''';
 }

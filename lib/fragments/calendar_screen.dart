@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bottom_nav/core/apicall/async_get_CalendarData.dart';
+import 'package:flutter_bottom_nav/core/static_variables.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 class CalendarScreen extends StatefulWidget {
@@ -46,6 +48,36 @@ class _CalendarScreenState extends State<CalendarScreen> {
     DateTime.utc(2026, 1, 10): 7,
     DateTime.utc(2026, 1, 15): 1,
   };
+Future<void> _fetchData() async {
+  try {
+    // 🔹 Build CurMonth (Android same logic)
+    // final curMonth =
+    //     "01/${_focusedDay.month.toString().padLeft(2, '0')}/${_focusedDay.year}-01";
+
+// final curMonth =
+//     "${_focusedDay.year}-${_focusedDay.month.toString().padLeft(2, '0')}-01";
+    
+    
+  final curMonth = "2026-05-01";
+    // 🔹 Call API
+    final data = await AsyncGetCalendardata().getCalendarData(
+      SAPCode: StaticVariables.mSAPCode,
+      curMonth: curMonth,
+    );
+
+    // 🔥 Just print response
+    print("========== API RESPONSE ==========");
+    print("Total records: ${data.length}");
+
+    for (var item in data) {
+      print(item.toString());
+    }
+
+  } catch (e) {
+    print("Error fetching calendar data: $e");
+  }
+}
+
 
   @override
   void initState() {
@@ -65,20 +97,20 @@ class _CalendarScreenState extends State<CalendarScreen> {
   }
 
   // Simulate API / data fetching
-  void _fetchData() async {
-    await Future.delayed(const Duration(seconds: 2));
+  // void _fetchData() async {
+  //   await Future.delayed(const Duration(seconds: 2));
 
-    setState(() {
-      _currentDate = "20-01-2025";
-      _currentTiming = "04:33 AM";
-      _nop = "12";
-      _gwp = "24.20";
-      totalLeads = 13;
-      convertedLeads = 1;
-      wipLeads = 12;
-      lostLeads = 0;
-    });
-  }
+  //   setState(() {
+  //     _currentDate = "20-01-2025";
+  //     _currentTiming = "04:33 AM";
+  //     _nop = "12";
+  //     _gwp = "24.20";
+  //     totalLeads = 13;
+  //     convertedLeads = 1;
+  //     wipLeads = 12;
+  //     lostLeads = 0;
+  //   });
+  // }
 
   void _refreshData() {
     print("Refresh button clicked");

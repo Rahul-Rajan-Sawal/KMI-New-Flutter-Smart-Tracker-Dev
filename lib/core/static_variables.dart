@@ -7,7 +7,7 @@ class StaticVariables {
   // static const String hostName = "iceservices.brobotinsurance.com";
 
   //BaseUrl and HostName For UAT
-  static const String baseUrl =
+  static const String baseUrl = 
       "https://mservices.brobotinsurance.com/LMSWEBAPIUAT/api/lms";
   static const String hostName = "mservices.brobotinsurance.com";
   static const String ContentURL =
@@ -19,12 +19,19 @@ class StaticVariables {
   static const String authenticateUser = "AuthenticateUser_WithAppVersion",
       getSearchData = "GetSearchData",
       GetDashboardData = "GetDashboardData",
-      bridgeCallDtls="bridgeCallDtls";
+      bridgeCallDtls="bridgeCallDtls",
+      GetMstMapping="GetMstMapping",
+      getLastActivityForLead="GetLastActivityForLead",
+      UpdateActivity= "UpdateActivity",
+      GetCalendarData="GetCalendarData";      
 
   static const String BridgeCallDtls = "BridgeCallDtls";
 
   static const String SearchLead = "SearchLead";
 
+
+
+static  String lastSyncDate = DateTime.now().toString();
   // static const String appVersion = "23"; //prod
   static const String appVersion = "17"; //uat
   static const String prefsName = "MY_PREFS";
@@ -40,7 +47,7 @@ class StaticVariables {
   static String? authorization;
   static String? callerPass;
 
-  // static String CallerPass = "";
+  //static String CallerPass = "";
   static String TokenId = "";
   static String mSAPCode = "";
   static String mBranchName = "";
