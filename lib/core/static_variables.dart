@@ -1,10 +1,14 @@
 class StaticVariables {
   //BaseUrl and HostName For Production
+  //   static const String baseUrl =
+  //       "https://iceservices.brobotinsurance.com/RGI_LMS_WRAPERAPI/api/lms";
+  //   static const String ContentURL =
+  //       "https://iceservices.reliancegeneral.co.in/RGI_LMS_WRAPERAPI/mFiles/";
   // static const String baseUrl =
   //     "https://iceservices.brobotinsurance.com/RGI_LMS_WRAPERAPI/api/lms";
   //      static const String ContentURL = "https://iceservices.reliancegeneral.co.in/RGI_LMS_WRAPERAPI/mFiles/";
 
-  // static const String hostName = "iceservices.brobotinsurance.com";
+  //   static const String hostName = "iceservices.brobotinsurance.com";
 
   //BaseUrl and HostName For UAT
    static const String baseUrl = 
@@ -19,18 +23,19 @@ class StaticVariables {
   static const String authenticateUser = "AuthenticateUser_WithAppVersion",
       getSearchData = "GetSearchData",
       GetDashboardData = "GetDashboardData",
-     
       SearchAgent = "SearchAgent",
       GetLeadDetails = "GetLeadDetails",
       MarkPrimaryContact = "MarkPrimaryContact",
       SubmitAgntContact = "SubmitAgntContact",
       SubmitCustContact = "SubmitCustContact",
-      bridgeCallDtls="bridgeCallDtls",
-      GetMstMapping="GetMstMapping",
-      getLastActivityForLead="GetLastActivityForLead",
-      UpdateActivity= "UpdateActivity",
-      GetCalendarData="GetCalendarData",
+      bridgeCallDtls = "bridgeCallDtls",
+      GetMstMapping = "GetMstMapping",
+      getLastActivityForLead = "GetLastActivityForLead",
+      UpdateActivity = "UpdateActivity",
+      GetCalendarData = "GetCalendarData",
+      GetAllAssignedLeads = "GetAllAssignedLeads";
       GetDashboardParam="GetDashboardParam";      
+
 
   static const String BridgeCallDtls = "BridgeCallDtls";
 
@@ -53,6 +58,7 @@ static  String lastSyncDate = DateTime.now().toString();
   static String? dbKey;
   static String? authorization;
   static String? callerPass;
+  // static String? SrvcReqDtlCode;
 
   //static String CallerPass = "";
   static String TokenId = "";

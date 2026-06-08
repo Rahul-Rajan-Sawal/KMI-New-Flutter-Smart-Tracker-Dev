@@ -1,5 +1,6 @@
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bottom_nav/Activities/Upcoming_Event_Activity.dart';
 import 'package:flutter_bottom_nav/Activities/add_agent_contact_activity.dart';
 import 'package:flutter_bottom_nav/Activities/activity_add_contact.dart';
 import 'package:flutter_bottom_nav/Activities/customer_contact_activity.dart';
@@ -73,6 +74,12 @@ class _MainScreenState extends State<MainScreen> {
     if (_drawerItems[index]["title"] == "Logout") {
       popUp();
       return;
+    }
+    if (_drawerItems[index]["title"] == "Schedule") {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => UpcomingEventActivity()),
+      );
     }
     if (_drawerItems[index]["title"] == "Add Agent Customer Details") {
       Navigator.push(

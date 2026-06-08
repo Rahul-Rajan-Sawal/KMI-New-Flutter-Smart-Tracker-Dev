@@ -564,6 +564,24 @@ class ApiRequestBuilder {
     };
   }
 
+  static Map<String, dynamic> GetAllAssignedLeads({
+    required String sapCode,
+    required String CurMonth,
+    required String lastSyncDate,
+    required String CallerId,
+    required String CallerPass,
+    required String tokenId,
+  }) {
+    return {
+      "UserId": sapCode,
+      "CurMonth": CurMonth,
+      "LastSyncDate": lastSyncDate,
+      "CallerId": CallerId,
+      "CallerPass": CallerPass,
+      "TokenId": tokenId,
+    };
+  }
+
   static Map<String, dynamic> SubmitAgntContact({
     required String sapCode,
     required String intermediaryType,
@@ -618,6 +636,20 @@ class ApiRequestBuilder {
     };
   }
 
+  static Map<String, dynamic> GetLeadDetails({
+    required String sapCode,
+    required String LeadID,
+    required String PolicyNo,
+    String? callerId,
+    String? callerPass,
+    required String tokenId,
+  }) {
+    return {
+      "UserId": sapCode,
+      "LeadID": LeadID,
+      "PolicyNo": PolicyNo,
+      "CallerId": callerId,
+      "CallerPass": callerPass,
   static Map<String, dynamic> GetDashboardParam({
     required String SAPCode,
     required String BranchCode,

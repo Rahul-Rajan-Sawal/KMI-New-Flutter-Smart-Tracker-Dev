@@ -73,7 +73,7 @@ class _SearchFragmentState extends State<SearchFragment> {
     super.initState();
 
     loadLOB(); // load from offline DB
-    
+
     //    loadDropdownData();
     checkTables();
   }
@@ -82,7 +82,6 @@ class _SearchFragmentState extends State<SearchFragment> {
   Future<void> loadAgentsAndHNIN() async {
     final data = await LeadRepository.fetchDecryptedLeads(
       columnsToDecrypt: ["AgentName", "AgentCode", "HNINName", "HNINCode"],
-      
     );
     print(data);
     List<String> tempAgentDesc = [];
@@ -824,7 +823,7 @@ class _SearchFragmentState extends State<SearchFragment> {
 
               // const SizedBox(height: 10),
             ),
-            
+
             buildDropdown(
               "All Vertical Code",
               // AllAgents, //Commented by Manish //need to change
@@ -967,6 +966,7 @@ class _SearchFragmentState extends State<SearchFragment> {
                         CommonUtil.hide(context);
                       }
 
+                      if (!mounted) return;
                       // Navigate to SearchedLead screen with the decrypted leads
                       Navigator.push(
                         context,
@@ -1014,8 +1014,7 @@ class _SearchFragmentState extends State<SearchFragment> {
   Widget buildDropdown(
     String labelText,
     String? value,
-    List<String>
-    items, //added items list (earlier you didn’t have this)
+    List<String> items, //added items list (earlier you didn’t have this)
     ValueChanged<String?> onChanged,
   ) {
     return Padding(
