@@ -10,10 +10,15 @@ class CalendarDataModel {
   final String? prodCode;
   final String? ncbFlag;
   final String? date;
-  final String? totalLeads;
-  final String? wipLeads;
-  final String? leadConverted;
-  final String? leadLost;
+  // final String? totalLeads;
+  // final String? wipLeads;
+  // final String? leadConverted;
+  // final String? leadLost;
+  final int totalLeads;
+  final int wipLeads;
+  final int leadConverted;
+  final int leadLost;
+  
   final String? leadType;
   final String? bizType;
   final String? marcketType;
@@ -64,10 +69,10 @@ class CalendarDataModel {
     this.prodCode,
     this.ncbFlag,
     this.date,
-    this.totalLeads,
-    this.wipLeads,
-    this.leadConverted,
-    this.leadLost,
+    required this.totalLeads,
+    required this.wipLeads,
+    required this.leadConverted,
+    required this.leadLost,
     this.leadType,
     this.bizType,
     this.marcketType,
@@ -107,7 +112,11 @@ class CalendarDataModel {
     this.mdate,
   });
 
+
   factory CalendarDataModel.fromJson(Map<String, dynamic> json) {
+    int _toInt(dynamic v) {
+  return int.tryParse(v?.toString() ?? '') ?? 0;
+}
     return CalendarDataModel(
       responseCode: json['ResponseCode']?.toString(),
       message: json['Message']?.toString(),
@@ -120,10 +129,14 @@ class CalendarDataModel {
       prodCode: json['ProdCode']?.toString(),
       ncbFlag: json['NCBFlag']?.toString(),
       date: json['date']?.toString(),
-      totalLeads: json['TotalLeads']?.toString(),
-      wipLeads: json['WIPLeads']?.toString(),
-      leadConverted: json['LeadConverted']?.toString(),
-      leadLost: json['LeadLost']?.toString(),
+      // totalLeads: json['TotalLeads']?.toString(),
+      // wipLeads: json['WIPLeads']?.toString(),
+      // leadConverted: json['LeadConverted']?.toString(),
+      // leadLost: json['LeadLost']?.toString(),
+      totalLeads: _toInt(json['TotalLeads']),
+wipLeads: _toInt(json['WIPLeads']),
+leadConverted: _toInt(json['LeadConverted']),
+leadLost: _toInt(json['LeadLost']),
       leadType: json['LeadType']?.toString(),
       bizType: json['BizType']?.toString(),
       marcketType: json['MarcketType']?.toString(),

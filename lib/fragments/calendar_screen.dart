@@ -1,339 +1,429 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bottom_nav/core/apicall/async_get_CalendarData.dart';
+import 'package:flutter_bottom_nav/Activities/filteractivity_calendar.dart';
+import 'package:flutter_bottom_nav/core/apicall/async_getDashboardParam.dart';
+import 'package:flutter_bottom_nav/core/repository/commonrepo.dart';
 import 'package:flutter_bottom_nav/core/static_variables.dart';
+import 'package:flutter_bottom_nav/providers/calendar_filter_provider.dart';
+import 'package:flutter_bottom_nav/providers/calendar_provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:table_calendar/table_calendar.dart';
 
-class CalendarScreen extends StatefulWidget {
+class CalendarScreen extends ConsumerStatefulWidget {
   const CalendarScreen({super.key});
 
   @override
-  State<StatefulWidget> createState() => _CalendarScreenState();
+  ConsumerState<ConsumerStatefulWidget> createState() => _CalendarScreenState();
+
+  // @override
+  // State<CalendarScreen> createState() => _CalendarScreenState();
 }
 
-class _CalendarScreenState extends State<CalendarScreen> {
+class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   CalendarFormat _calendarFormat = CalendarFormat.month;
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
 
-  // Date & timing
   String _currentDate = "Loading...";
   String _currentTiming = "Loading...";
-  String _nop = "...";
-  String _gwp = "...";
 
-  final DateTime firstDate = DateTime(
-    DateTime.now().year,
-    DateTime.now().month - 2,
-    1,
-  );
+  //  String selectedFilter = "Option1";
 
-  final DateTime lastDate = DateTime(
-    DateTime.now().year,
-    DateTime.now().month + 3,
-    0,
-  );
-
-  // Leads data
-  int totalLeads = 13;
-  int convertedLeads = 1;
-  int wipLeads = 12;
-  int lostLeads = 0;
-
-  // Radio / filter
-  String selectedFilter = "Option1"; // default selection
-  int _selectedType = 1; // not used yet, can remove if unnecessary
-
-  final Map<DateTime, int> dayCounts = {
-    DateTime.utc(2026, 1, 5): 3,
-    DateTime.utc(2026, 1, 10): 7,
-    DateTime.utc(2026, 1, 15): 1,
-  };
-Future<void> _fetchData() async {
-  try {
-    // 🔹 Build CurMonth (Android same logic)
-    // final curMonth =
-    //     "01/${_focusedDay.month.toString().padLeft(2, '0')}/${_focusedDay.year}-01";
-
-// final curMonth =
-//     "${_focusedDay.year}-${_focusedDay.month.toString().padLeft(2, '0')}-01";
-    
-    
-  final curMonth = "2026-05-01";
-    // 🔹 Call API
-    final data = await AsyncGetCalendardata().getCalendarData(
-      SAPCode: StaticVariables.mSAPCode,
-      curMonth: curMonth,
-    );
-
-    // 🔥 Just print response
-    print("========== API RESPONSE ==========");
-    print("Total records: ${data.length}");
-
-    for (var item in data) {
-      print(item.toString());
-    }
-
-  } catch (e) {
-    print("Error fetching calendar data: $e");
+  DateTime normalize(DateTime d) {
+    return DateTime(d.year, d.month, d.day);
   }
-}
 
+  late DateTime firstDate;
+  late DateTime lastDate;
 
   @override
   void initState() {
     super.initState();
-    _fetchData();
 
     final now = DateTime.now();
-    // firstDate = DateTime(now.year, now.month - 2, 1);
-    // lastDate = DateTime(now.year, now.month + 2, 0);
+
+    firstDate = DateTime(now.year, now.month - 2, 1);
+    lastDate = DateTime(now.year, now.month + 2, 0);
 
     _focusedDay = now;
   }
 
-  @override
-  void dispose() {
-    super.dispose();
-  }
-
-  // Simulate API / data fetching
-  // void _fetchData() async {
-  //   await Future.delayed(const Duration(seconds: 2));
-
-  //   setState(() {
-  //     _currentDate = "20-01-2025";
-  //     _currentTiming = "04:33 AM";
-  //     _nop = "12";
-  //     _gwp = "24.20";
-  //     totalLeads = 13;
-  //     convertedLeads = 1;
-  //     wipLeads = 12;
-  //     lostLeads = 0;
-  //   });
-  // }
-
   void _refreshData() {
-    print("Refresh button clicked");
-    _fetchData();
-  }
-
-  void _onFilterClick() {
-    print("Filter button clicked");
+    //ref.invalidate(calendarDataProvider);
+    //ref.watch(calendarProvider);
+    ref.read(calendarProvider.notifier).refresh();
   }
 
   @override
   Widget build(BuildContext context) {
+    final calendarAsync = ref.watch(
+      calendarProvider,
+    ); // ref.watch(calendarDataProvider);
+    final filterState = ref.watch(calendarFilterProvider);
+
     return Scaffold(
       backgroundColor: Colors.grey[100],
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 14),
+      body: calendarAsync.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (e, s) => Center(child: Text("Error: $e")),
 
-            // Date & Timing Card
-            Card(
-              color: const Color(0xFFE9E9E9),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _buildCardItem("Showing Date", _currentDate),
-                    _buildCardItem("Timing", _currentTiming),
-                    _buildIcon(),
-                  ],
-                ),
-              ),
-            ),
+        data: (data) {
+          final Map<DateTime, int> dayCounts = {};
+          final Map<DateTime, int> convertedMap = {};
+          final Map<DateTime, int> wipMap = {};
+          final Map<DateTime, int> lostMap = {};
 
-            const SizedBox(height: 10),
+          int totalLeads = 0;
+          int convertedLeads = 0;
+          int wipLeads = 0;
+          int lostLeads = 0;
 
-            // Leads Card
-            Card(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              elevation: 4,
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [Color(0xFF090979), Color(0xFF00D4FF)],
+          for (final item in data) {
+            final d = normalize(item.date);
+
+            // Daily counts for calendar
+            dayCounts[d] = (dayCounts[d] ?? 0) + item.totalLeads;
+
+            convertedMap[d] = (convertedMap[d] ?? 0) + item.leadConverted;
+            wipMap[d] = (wipMap[d] ?? 0) + item.wipLeads;
+            lostMap[d] = (lostMap[d] ?? 0) + item.leadLost;
+
+            // Global totals (for top card)
+            totalLeads += item.totalLeads;
+            convertedLeads += item.leadConverted;
+            wipLeads += item.wipLeads;
+            lostLeads += item.leadLost;
+          }
+
+          // ==========================================================
+          // 🔥 UI START
+          // ==========================================================
+
+          return SingleChildScrollView(
+            child: Column(
+              children: [
+                const SizedBox(height: 14),
+
+                Card(
+                  color: const Color(0xFFE9E9E9),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        _buildCardItem("Showing Date", _currentDate),
+                        _buildCardItem("Timing", _currentTiming),
+                        _buildIcon(),
+                      ],
+                    ),
                   ),
-                  borderRadius: BorderRadius.circular(16),
                 ),
-                child: Column(
-                  children: [
-                    const Text(
-                      "Total Leads",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
+                const SizedBox(height: 15),
+
+                // ===================== TOP SUMMARY CARD =====================
+                Card(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  elevation: 4,
+                  child: Column(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [Color(0xFF090979), Color(0xFF00D4FF)],
+                          ),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            const Text(
+                              "Total Leads",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+
+                            const SizedBox(height: 2),
+
+                            Text(
+                              totalLeads.toString(),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 30,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+
+                            const SizedBox(height: 2),
+
+                            const Text(
+                              "Total WIP renewal lead of selected month",
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+
+                            const SizedBox(height: 16),
+
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 10,
+                                horizontal: 12,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Expanded(
+                                    child: _statusText(
+                                      "Converted",
+                                      convertedLeads,
+                                    ),
+                                  ),
+
+                                  Expanded(
+                                    child: _statusText("WIP Lead", wipLeads),
+                                  ),
+
+                                  Expanded(
+                                    child: _statusText("Lead Lost", lostLeads),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 1),
+
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: [
+                                _buildRadioItem("All", 0),
+                                _buildRadioItem("Contact", 1),
+                                _buildRadioItem("Lead", 2),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      totalLeads.toString(),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    const Text(
-                      "Total WIP renewal lead of selected month",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 8,
-                        horizontal: 12,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.red,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
+                    ],
+                  ),
+                ),
+
+                // Card(
+                //   shape: RoundedRectangleBorder(
+                //     borderRadius: BorderRadius.circular(16),
+                //   ),
+                //   elevation: 4,
+                //   child: Container(
+                //     padding: const EdgeInsets.all(16),
+                //     decoration: BoxDecoration(
+                //       gradient: const LinearGradient(
+                //         begin: Alignment.topLeft,
+                //         end: Alignment.bottomRight,
+                //         colors: [Color(0xFF090979), Color(0xFF00D4FF)],
+                //       ),
+                //       borderRadius: BorderRadius.circular(16),
+                //     ),
+                //     child: Column(
+                //       crossAxisAlignment: CrossAxisAlignment.center,
+                //       children: [
+                //         const Text(
+                //           "Total Leads",
+                //           style: TextStyle(
+                //             color: Colors.white,
+                //             fontWeight: FontWeight.bold,
+                //             fontSize: 16,
+                //           ),
+                //         ),
+
+                //         const SizedBox(height: 8),
+
+                //         Text(
+                //           totalLeads.toString(),
+                //           style: const TextStyle(
+                //             color: Colors.white,
+                //             fontSize: 30,
+                //             fontWeight: FontWeight.bold,
+                //           ),
+                //         ),
+
+                //         const SizedBox(height: 8),
+
+                //         const Text(
+                //           "Total WIP renewal lead of selected month",
+                //           textAlign: TextAlign.center,
+                //           style: TextStyle(
+                //             color: Colors.white70,
+                //             fontSize: 14,
+                //             fontWeight: FontWeight.w500,
+                //           ),
+                //         ),
+
+                //         const SizedBox(height: 16),
+
+                //         Container(
+                //           padding: const EdgeInsets.symmetric(
+                //             vertical: 10,
+                //             horizontal: 12,
+                //           ),
+                //           decoration: BoxDecoration(
+                //             color: Colors.white.withOpacity(0.15),
+                //             borderRadius: BorderRadius.circular(12),
+                //           ),
+                //           child: Row(
+                //             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                //             children: [
+                //               Expanded(
+                //                 child: _statusText("Converted", convertedLeads),
+                //               ),
+
+                //               Expanded(
+                //                 child: _statusText("WIP Lead", wipLeads),
+                //               ),
+
+                //               Expanded(
+                //                 child: _statusText("Lead Lost", lostLeads),
+                //               ),
+                //             ],
+                //           ),
+                //         ),
+                //       ],
+                //     ),
+                //   ),
+                // const SizedBox(height: 10),
+
+                //   Row(
+                //     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                //     children: [
+                //       _buildRadioItem("All", 1, ),
+                //       _buildRadioItem("Contact", 2),
+                //       _buildRadioItem("Lead", 3),
+                //     ],
+                //   ),
+
+                // ),
+                const SizedBox(height: 10),
+
+                // Refresh Card
+                Card(
+                  color: const Color(0xFFE9E9E9),
+                  child: InkWell(
+                    onTap: _refreshData,
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
                       child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          _statusText("Converted", convertedLeads),
-                          _statusText("WIP Lead", wipLeads),
-                          _statusText("Lead Lost", lostLeads),
+                          Icon(Icons.loop, color: Colors.red[900], size: 30),
+                          const SizedBox(width: 10),
+                          const Text(
+                            "Refresh",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 20,
+                            ),
+                          ),
                         ],
                       ),
                     ),
-                  ],
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 10),
-
-            // Refresh Card
-            Card(
-              color: const Color(0xFFE9E9E9),
-              child: InkWell(
-                onTap: _refreshData,
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.loop, color: Colors.red[900], size: 30),
-                      const SizedBox(width: 10),
-                      const Text(
-                        "Refresh",
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 20,
-                        ),
-                      ),
-                    ],
                   ),
                 ),
-              ),
-            ),
 
-            const SizedBox(height: 10),
+                const SizedBox(height: 10),
 
-            // ✅
-            TableCalendar(
-              firstDay: firstDate,
-              lastDay: lastDate,
-              focusedDay: _focusedDay,
+                // CALENDAR
+                TableCalendar(
+                  firstDay: firstDate,
+                  lastDay: lastDate,
+                  focusedDay: _focusedDay,
 
-              calendarFormat: _calendarFormat,
-              startingDayOfWeek: StartingDayOfWeek.monday,
+                  selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
 
-              calendarStyle: const CalendarStyle(
-                todayDecoration: BoxDecoration(color: Colors.transparent),
-                todayTextStyle: TextStyle(color: Colors.black),
-              ),
+                  onDaySelected: (selected, focused) {
+                    setState(() {
+                      _selectedDay = selected;
+                      _focusedDay = focused;
+                    });
+                  },
 
-              availableCalendarFormats: const {CalendarFormat.month: 'Month'},
+                  onPageChanged: (focusedDay) {
+                    _focusedDay = focusedDay;
+                  },
 
-              headerStyle: const HeaderStyle(
-                titleCentered: true,
-                formatButtonVisible: false,
-              ),
+                  calendarBuilders: CalendarBuilders(
+                    defaultBuilder: (context, date, _) {
+                      final d = normalize(date);
 
-              selectedDayPredicate: (day) {
-                return isSameDay(_selectedDay, day);
-              },
+                      final count = dayCounts[d];
 
-              onDaySelected: (selectedDay, focusedDay) {
-                setState(() {
-                  _selectedDay = selectedDay;
-                  _focusedDay = focusedDay;
-                });
-              },
+                      return Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text("${date.day}"),
 
-              onPageChanged: (focusedDay) {
-                if (focusedDay.isBefore(firstDate)) {
-                  _focusedDay = firstDate;
-                } else if (focusedDay.isAfter(lastDate)) {
-                  _focusedDay = lastDate;
-                } else {
-                  _focusedDay = focusedDay;
-                }
-              },
-
-              calendarBuilders: CalendarBuilders(
-                defaultBuilder: (context, date, focusedDay) {
-                  final normalizedDate = DateTime(
-                    date.year,
-                    date.month,
-                    date.day,
-                  );
-                  final count = dayCounts[normalizedDate];
-
-                  return Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text('${date.day}'),
-                      if (count != null)
-                        Container(
-                          margin: const EdgeInsets.only(top: 4),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.blue,
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            '$count',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 10,
+                          if (count != null)
+                            Container(
+                              margin: const EdgeInsets.only(top: 2),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 4,
+                                vertical: 1,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.blue,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                "$count",
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                ),
+                              ),
                             ),
-                          ),
-                        ),
-                    ],
-                  );
-                },
-              ),
-            ),
+                        ],
+                      );
+                    },
+                  ),
+                ),
 
-            const SizedBox(height: 20),
-          ],
-        ),
+                const SizedBox(height: 30),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
 
-  // Helper: Card item
+  // ===================== MINI WIDGET =====================
+  Widget _miniStat(String title, int value) {
+    return Column(
+      children: [
+        Text(title, style: const TextStyle(color: Colors.white)),
+        const SizedBox(height: 5),
+        Text(
+          "$value",
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildCardItem(String title, String value) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -355,31 +445,47 @@ Future<void> _fetchData() async {
     );
   }
 
-  // Helper: Status item
-  Widget _statusText(String title, int value) {
-    return Column(
-      children: [
-        Text(
-          title,
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 15,
-          ),
+  void _onFilterClick() async {
+    print("Filter button clicked");
+
+    final now = DateTime.now();
+
+    final year = now.year.toString();
+    final month = now.month.toString().padLeft(2, '0');
+
+
+    // needs to optimize to check db first 
+    final response = await GetDashboardParamApi.getData(
+      sapCode: StaticVariables.mSAPCode,
+      branchCode: '',
+      smCode: '',
+      agentCode: '',
+      flag: 'ZRB', //RE,SM,AG,
+      filterType: 'Self',
+      year: year,
+      month: month,
+    );
+    await CommonRepo().saveZoneRegionBranch(
+      response: response,
+      year: year,
+      month: month,
+    );
+
+    if (!mounted) return;
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CalendarFilterActivity(
+          userId: StaticVariables.mSAPCode,
+          year: year,
+          month: month,
+          isTeam: false,
         ),
-        const SizedBox(height: 4),
-        Text(
-          value.toString(),
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ],
+      ),
     );
   }
 
-  // Helper: Filter icon
   Widget _buildIcon() {
     return InkWell(
       onTap: _onFilterClick,
@@ -401,58 +507,66 @@ Future<void> _fetchData() async {
     );
   }
 
-  // Helper: Horizontal icon + text
-  Widget _buildIconhorizontal(String flag) {
-    String assetPath;
-    String displayText;
-
-    if (flag == "refresh") {
-      assetPath = 'assets/icons_refresh.png';
-      displayText = "Refresh Dashboard";
-    } else {
-      assetPath = 'assets/default_icon.png';
-      displayText = "More Info";
-    }
-
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
+  Widget _statusText(String title, int count) {
+    return Column(
       children: [
-        Image.asset(
-          assetPath,
-          height: 25,
-          width: 25,
-          errorBuilder: (context, error, stackTrace) {
-            return const Icon(Icons.error, color: Colors.red);
-          },
-        ),
-        const SizedBox(width: 10),
         Text(
-          displayText,
+          count.toString(),
           style: const TextStyle(
-            fontSize: 16,
-            color: Color(0xFF17479e),
+            color: Colors.white,
             fontWeight: FontWeight.bold,
+            fontSize: 18,
+          ),
+        ),
+
+        const SizedBox(height: 4),
+
+        Text(
+          title,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
           ),
         ),
       ],
     );
   }
 
-  // Radio widget
-  Widget _radioItem(String value) {
+  Widget _buildRadioItem(String title, int value) {
+    final filterState = ref.watch(calendarFilterProvider);
+
     return Row(
       children: [
-        Radio<String>(
+        Radio<int>(
           value: value,
-          groupValue: selectedFilter,
+          groupValue: filterState.leadType,
           activeColor: Colors.white,
           onChanged: (val) {
-            setState(() {
-              selectedFilter = val!;
-            });
+            // Update filter state
+            ref
+                .read(calendarFilterProvider.notifier)
+                .setFilters(filterState.copyWith(leadType: val!));
+
+            // Refresh calendar data using new filter
+            ref.read(calendarProvider.notifier).refresh();
+
+            // ref
+            //     .read(calendarFilterProvider.notifier)
+            //     .setFilters(filterState.copyWith(leadType: val!));
+
+            // refresh API automatically
+            // ref.invalidate(calendarDataProvider);
           },
         ),
-        Text(value, style: const TextStyle(color: Colors.white)),
+        Text(
+          title,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ],
     );
   }

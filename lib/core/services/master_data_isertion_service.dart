@@ -54,6 +54,7 @@ class MastersMappingInsertService {
           "RDLCURL": EncryptionUtil.encrypt(item["RDLCURL"].toString()),
           "RDLCServer": EncryptionUtil.encrypt(item["RDLCServer"].toString()),
           "IsActive": EncryptionUtil.encrypt(item["IsActive"].toString()),
+          "ProdCategory": EncryptionUtil.encrypt(item["ProdCategory"].toString()),
         },
         conflictAlgorithm: ConflictAlgorithm.replace,
       );

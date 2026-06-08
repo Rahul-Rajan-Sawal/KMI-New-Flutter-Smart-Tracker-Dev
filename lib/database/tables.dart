@@ -655,7 +655,8 @@ CREATE TABLE IF NOT EXISTS CBFrmLOBProdMapping(
   RenewalRDLC TEXT,
   RDLCURL TEXT,
   RDLCServer TEXT,
-  IsActive TEXT
+  IsActive TEXT,
+  ProdCategory TEXT
 );
 ''';
 
@@ -723,5 +724,117 @@ CREATE TABLE IF NOT EXISTS NotificationDetails(
 
   static const dropNotificationDetails = '''
 DROP TABLE IF EXISTS NotificationDetails
+''';
+
+  //Filter and calender activity tables
+  static const createTbl_ZoneRegionBranch = '''
+CREATE TABLE IF NOT EXISTS Tbl_ZoneRegionBranch(
+    SrNo integer primary key autoincrement,
+    RMCode varchar,
+    Zone varchar,
+    Region varchar,
+    BranchCode varchar,
+    BranchName varchar,
+    UserId varchar,
+    Month varchar,
+    Year varchar,
+    SyncDate varchar
+);
+''';
+
+  static const dropTbl_ZoneRegionBranch = '''
+DROP TABLE IF EXISTS Tbl_ZoneRegionBranch
+''';
+
+  static const createTbl_SalesManager = '''
+CREATE TABLE IF NOT EXISTS Tbl_SalesManager(
+    SrNo integer primary key autoincrement,
+    RMCode varchar,
+    BranchCode varchar,
+    SMCode varchar,
+    SMName varchar,
+    UserId varchar,
+    SyncDate varchar
+);
+''';
+
+  static const dropTbl_SalesManager = '''
+DROP TABLE IF EXISTS Tbl_SalesManager
+''';
+
+  static const createTbl_Agent = '''
+CREATE TABLE IF NOT EXISTS Tbl_Agent(
+    SrNo integer primary key autoincrement,
+    SMCode varchar,
+    AgentCode varchar,
+    AgentName varchar,
+    UserId varchar,
+    SyncDate varchar
+);
+''';
+
+  static const dropTbl_Agent = '''
+DROP TABLE IF EXISTS Tbl_Agent
+''';
+
+  static const createTbl_Reference = '''
+CREATE TABLE IF NOT EXISTS Tbl_Reference(
+    SrNo integer primary key autoincrement,
+    AgentCode varchar,
+    ReferenceCode varchar,
+    ReferenceName varchar,
+    UserId varchar,
+    SyncDate varchar
+);
+''';
+
+  static const dropTbl_Reference = '''
+DROP TABLE IF EXISTS Tbl_Reference
+''';
+
+  static const createTbl_LookUpSU = '''
+CREATE TABLE IF NOT EXISTS LookUpSU(
+    LookupCode varchar,
+    ParamValue varchar,
+    ParamDesc1 varchar,
+    ParamDesc2 varchar,
+    SortOrder varchar,
+    ParamDescShort varchar,
+    IsActive varchar,
+    RecID integer,
+    CreatedBy varchar,
+    CreateDtim varchar,
+    LookUpCode2 varchar,
+    CeaseDate varchar,
+    UpdateDTim varchar,
+    UpdatedBy varchar,
+    PRIMARY KEY (LookupCode, ParamValue)
+);
+''';
+
+  static const dropTbl_LookUpSU = '''
+DROP TABLE IF EXISTS LookUpSU
+''';
+  static const dropTbl_Make_Master = '''
+DROP TABLE IF EXISTS Make_Master
+''';
+
+  static const String createTbl_Make_Master = '''
+CREATE TABLE IF NOT EXISTS Make_Master(
+  Make_ID_PK TEXT PRIMARY KEY NOT NULL,
+  Make_Tac_Code TEXT NOT NULL,
+  Make_Name TEXT NOT NULL,
+  Make_Desc TEXT,
+  Created_Date TEXT NOT NULL,
+  Created_By TEXT NOT NULL,
+  Updated_Date TEXT,
+  Updated_By TEXT,
+  Deleted_Date TEXT,
+  Deleted_By TEXT,
+  Field1 TEXT,
+  Field2 TEXT,
+  Make_ARC TEXT NOT NULL,
+  CeaseDate TEXT
+);
 ''';
 }

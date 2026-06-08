@@ -2,12 +2,12 @@ class StaticVariables {
   //BaseUrl and HostName For Production
   // static const String baseUrl =
   //     "https://iceservices.brobotinsurance.com/RGI_LMS_WRAPERAPI/api/lms";
-  //      static const String ContentURL = "https://iceservices.reliancegeneral.co.in/RGI_LMS_WRAPERAPI/mFiles/";*/
+  //      static const String ContentURL = "https://iceservices.reliancegeneral.co.in/RGI_LMS_WRAPERAPI/mFiles/";
 
   // static const String hostName = "iceservices.brobotinsurance.com";
 
   //BaseUrl and HostName For UAT
-  static const String baseUrl = 
+   static const String baseUrl = 
       "https://mservices.brobotinsurance.com/LMSWEBAPIUAT/api/lms";
   static const String hostName = "mservices.brobotinsurance.com";
   static const String ContentURL =
@@ -29,7 +29,8 @@ class StaticVariables {
       GetMstMapping="GetMstMapping",
       getLastActivityForLead="GetLastActivityForLead",
       UpdateActivity= "UpdateActivity",
-      GetCalendarData="GetCalendarData";      
+      GetCalendarData="GetCalendarData",
+      GetDashboardParam="GetDashboardParam";      
 
   static const String BridgeCallDtls = "BridgeCallDtls";
 
@@ -38,7 +39,7 @@ class StaticVariables {
 
 
 static  String lastSyncDate = DateTime.now().toString();
-  // static const String appVersion = "23"; //prod
+ //  static const String appVersion = "23"; //prod
   static const String appVersion = "17"; //uat
   static const String prefsName = "MY_PREFS";
 

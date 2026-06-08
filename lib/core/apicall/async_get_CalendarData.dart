@@ -4,7 +4,7 @@ import 'dart:math';
 import 'package:flutter_bottom_nav/core/network/api_request_builder.dart';
 import 'package:flutter_bottom_nav/core/network/encrypted_httpservice.dart';
 import 'package:flutter_bottom_nav/core/static_variables.dart';
-import 'package:flutter_bottom_nav/models/calendarDataModel.dart';
+import 'package:flutter_bottom_nav/models/Calendar/calendarDataModel.dart';
 
 class AsyncGetCalendardata {
   Future<List<CalendarDataModel>> getCalendarData({
