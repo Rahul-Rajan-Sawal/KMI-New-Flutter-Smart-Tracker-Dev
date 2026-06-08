@@ -885,7 +885,8 @@ Widget _buildProductDropdownSection(
 ) {
   if (mstState.selectedProductGroups.isEmpty) {
     return const Center(
-      child: Text(
+      child: Text( 
+        
         "Product group selection is mandatory before Product selection.",
         textAlign: TextAlign.center,
         style: TextStyle(fontSize: 16, color: Colors.grey),
