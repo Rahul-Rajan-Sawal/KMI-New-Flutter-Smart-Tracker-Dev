@@ -650,6 +650,30 @@ class ApiRequestBuilder {
       "PolicyNo": PolicyNo,
       "CallerId": callerId,
       "CallerPass": callerPass,
+  static Map<String, dynamic> GetDashboardParam({
+    required String SAPCode,
+    required String BranchCode,
+    required String Flag,
+    required String SMCode,
+    required String AgentCode,
+    required String DType,
+    required String Year,
+    required String Month,
+    required String CallerId,
+    required String CallerPass,
+    required String tokenId,
+  }) {
+    return {
+      "UserId": SAPCode,
+      "BranchCode": BranchCode,
+      "Flag": Flag,
+      "SMCode": SMCode,
+      "AgentCode": AgentCode,
+      "DType": DType,
+      "Year": Year,
+      "Month": Month,
+      "CallerId": CallerId,
+      "CallerPass": CallerPass,
       "TokenId": tokenId,
     };
   }
