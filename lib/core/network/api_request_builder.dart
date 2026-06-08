@@ -650,6 +650,8 @@ class ApiRequestBuilder {
       "PolicyNo": PolicyNo,
       "CallerId": callerId,
       "CallerPass": callerPass,
+      };
+      }
   static Map<String, dynamic> GetDashboardParam({
     required String SAPCode,
     required String BranchCode,

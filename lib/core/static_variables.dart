@@ -33,7 +33,7 @@ class StaticVariables {
       getLastActivityForLead = "GetLastActivityForLead",
       UpdateActivity = "UpdateActivity",
       GetCalendarData = "GetCalendarData",
-      GetAllAssignedLeads = "GetAllAssignedLeads";
+      GetAllAssignedLeads = "GetAllAssignedLeads",
       GetDashboardParam="GetDashboardParam";      
 
 
