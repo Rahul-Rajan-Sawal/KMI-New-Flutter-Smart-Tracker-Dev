@@ -42,13 +42,22 @@ class DatabaseHelper {
       await db.execute(DbTables.CreateTbl_CBFrmMSTProduct);
       await db.execute(DbTables.CreateTBL_CUSTOMER_CNT_DTLS);
       await db.execute(DbTables.CreateTBL_AGENT_CNT_DTLS);
+
+      await db.execute(DbTables.createTbl_ZoneRegionBranch);
+      await db.execute(DbTables.createTbl_SalesManager);
+      await db.execute(DbTables.createTbl_Agent);
+      await db.execute(DbTables.createTbl_Reference);
+      await db.execute(DbTables.createTbl_LookUpSU);
+      await db.execute(DbTables.createTbl_Make_Master);
       print("Table Created TBL_AGENT_CNT_DTLS");
       print(
         "**********************Tables Created---------------------------@@",
       );
       await db.execute(DbTables.createTbl_CalendarData_Mob);
       await db.execute(DbTables.createNotificationDetails);
-      print("**********************Tables Created---------------------------@@");
+      print(
+        "**********************Tables Created---------------------------@@",
+      );
     } catch (e) {
       print("exception catched :  $e");
     }
@@ -88,6 +97,12 @@ class DatabaseHelper {
     await db.execute(DbTables.dropTBL_AGENT_CNT_DTLS);
     await db.execute(DbTables.dropTBL_CUSTOMER_CNT_DTLS);
     await db.execute(DbTables.dropNotificationDetails);
+    await db.execute(DbTables.dropTbl_ZoneRegionBranch);
+    await db.execute(DbTables.dropTbl_SalesManager);
+    await db.execute(DbTables.dropTbl_Agent);
+    await db.execute(DbTables.dropTbl_Reference);
+    await db.execute(DbTables.dropTbl_LookUpSU);
+    await db.execute(DbTables.dropTbl_Make_Master);
     await _onCreate(db, newVersion);
   }
 

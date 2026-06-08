@@ -1,15 +1,8 @@
 import 'dart:io';
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_bottom_nav/common/common_singltbtn_popup.dart';
-import 'package:flutter_bottom_nav/common/common_util.dart';
 import 'package:flutter_bottom_nav/core/apicall/async_updateactivity.dart';
 import 'package:flutter_bottom_nav/database/database_helper.dart';
 import 'package:flutter_bottom_nav/common/encryption_util.dart';
-import 'package:flutter_bottom_nav/core/network/encrypted_httpservice.dart';
-import 'package:flutter_bottom_nav/core/repository/activityrepository.dart';
-import 'package:flutter_bottom_nav/core/static_variables.dart';
-import 'package:path/path.dart';
 
 class SaveActivityOfflineRepository {
   // ENCRYPTION HELPERS
@@ -19,7 +12,7 @@ class SaveActivityOfflineRepository {
   static String? _dec(dynamic val) =>
       EncryptionUtil.decrypt(val?.toString() ?? "");
 
-  // ================= DATE FORMATTING =================
+  // DATE FORMATTING
   static String convertFormatDate(String? inputDate) {
     try {
       if (inputDate == null || inputDate.isEmpty) return "";
@@ -40,19 +33,19 @@ class SaveActivityOfflineRepository {
   // }
 
   static String _formatAndroidDateTime(DateTime dt) {
-  String day = dt.day.toString().padLeft(2, '0');
-  String month = dt.month.toString().padLeft(2, '0');
-  String year = dt.year.toString();
+    String day = dt.day.toString().padLeft(2, '0');
+    String month = dt.month.toString().padLeft(2, '0');
+    String year = dt.year.toString();
 
-  int hour = dt.hour;
-  String minute = dt.minute.toString().padLeft(2, '0');
+    int hour = dt.hour;
+    String minute = dt.minute.toString().padLeft(2, '0');
 
-  String amPm = hour >= 12 ? "pm" : "am";
+    String amPm = hour >= 12 ? "pm" : "am";
 
-  return "$day-$month-$year ${hour.toString().padLeft(2, '0')}:$minute $amPm";
-}
+    return "$day-$month-$year ${hour.toString().padLeft(2, '0')}:$minute $amPm";
+  }
 
-  // ================= SAFE PARSING =================
+  //  SAFE PARSING
   static int _parseIntSafe(String? value) {
     if (value == null) return 0;
     return int.tryParse(value.trim()) ?? 0;
@@ -63,13 +56,13 @@ class SaveActivityOfflineRepository {
     return double.tryParse(value.trim()) ?? 0.0;
   }
 
-  // ================= ✅ FIX #2: equalsIgnoreCase parity - use compareTo =================
+  //  equalsIgnoreCase parity  use compareTo
   static bool _eq(String? a, String b) {
     if (a == null) return false;
-    return a.toLowerCase().compareTo(b.toLowerCase()) == 0; // ✅ FIX #2
+    return a.toLowerCase().compareTo(b.toLowerCase()) == 0;
   }
 
-  // ================= CONNECTIVITY CHECK =================
+  // CONNECTIVITY CHECK
   static Future<bool> _isConnected() async {
     try {
       final result = await Connectivity().checkConnectivity();
@@ -84,7 +77,7 @@ class SaveActivityOfflineRepository {
     }
   }
 
-  // getMSTActivityDesc 
+  // getMSTActivityDesc
   static Future<String> getActivityDesc(String actCode) async {
     String desc = "Not Available";
     final db = await DatabaseHelper.instance.database;
@@ -95,7 +88,6 @@ class SaveActivityOfflineRepository {
         whereArgs: [actCode],
       );
 
-      
       Map<String, dynamic>? lastRow;
       for (var row in cursor) {
         lastRow = row;
@@ -112,7 +104,7 @@ class SaveActivityOfflineRepository {
 
   //  NOTIFICATION/ALERT
   static Future<void> _showAlert(String title, String message) async {
-    print("🔔 [$title] $message");
+    print(" [$title] $message");
   }
 
   static Future<void> _insertNotification({
@@ -122,21 +114,22 @@ class SaveActivityOfflineRepository {
     required String createdBy,
     //required String type,
   }) async {
-    
-    try{final db = await DatabaseHelper.instance.database;
-    await db.insert("NotificationDetails", {
-      "Title": _enc(title),
-      "Message": _enc(message),
-      "DateTime": _enc(dateTime),
-      "CreatedBy": _enc(createdBy),
-      //"Type": _enc(type),
-      "SyncStatus": _enc("Pending"),
-    });}catch(e){
+    try {
+      final db = await DatabaseHelper.instance.database;
+      await db.insert("NotificationDetails", {
+        "Title": _enc(title),
+        "Message": _enc(message),
+        "DateTime": _enc(dateTime),
+        "CreatedBy": _enc(createdBy),
+        //"Type": _enc(type),
+        "SyncStatus": _enc("Pending"),
+      });
+    } catch (e) {
       print(" Exception caught of Notification insert : $e");
     }
   }
 
-  //  SYNC STATUS UPDATES 
+  //  SYNC STATUS UPDATES
   static Future<void> _updateSyncStatusAfterSuccess({
     required String leadID,
     required String activityCode,
@@ -203,7 +196,7 @@ class SaveActivityOfflineRepository {
               message: successMsg,
               dateTime: _formatAndroidDateTime(DateTime.now()),
               createdBy: loginSAPCode,
-             // type: "Online Activity Disposition",
+              // type: "Online Activity Disposition",
             );
             break;
           } else {
@@ -215,7 +208,7 @@ class SaveActivityOfflineRepository {
             final failMsg =
                 "Activity Disposition of Lead number $resolvedLeadID for $activityDesc is failed. Due to $errorMsg";
 
-           // CommonSinglePopup(message: failMsg,title: "Activity Disposition Failed ", onOk:(){ Navigator.pop(context);},);
+            // CommonSinglePopup(message: failMsg,title: "Activity Disposition Failed ", onOk:(){ Navigator.pop(context);},);
             await _showAlert("Failed Activity Disposition", failMsg);
             await _insertNotification(
               title: "Failed Activity Disposition",
@@ -237,7 +230,7 @@ class SaveActivityOfflineRepository {
           message: failMsg,
           dateTime: _formatAndroidDateTime(DateTime.now()),
           createdBy: loginSAPCode,
-         // type: "Online Activity Disposition",
+          // type: "Online Activity Disposition",
         );
       }
     } catch (e, stackTrace) {
@@ -251,7 +244,7 @@ class SaveActivityOfflineRepository {
         message: failMsg,
         dateTime: _formatAndroidDateTime(DateTime.now()),
         createdBy: loginSAPCode,
-       // type: "Online Activity Disposition",
+        // type: "Online Activity Disposition",
       );
 
       print("Sync error: $e\n$stackTrace");
@@ -346,7 +339,7 @@ class SaveActivityOfflineRepository {
           );
 
           if (mCursor.isNotEmpty) {
-            // ✅ Android: loops ALL rows, last value wins
+            // Android loops ALL rows, last value wins
             for (var row in mCursor) {
               resolvedLeadID = _dec(row["SrvcReqDtlCode"]) ?? mLeadID;
               cv["SrvcReqDtlCode"] = _enc(resolvedLeadID);
@@ -504,7 +497,7 @@ class SaveActivityOfflineRepository {
         );
       }
     } catch (e, stackTrace) {
-      print("❌ ERROR in insertUpdateActivity: $e\n$stackTrace");
+      print("ERROR in insertUpdateActivity: $e\n$stackTrace");
     }
   }
 
@@ -520,7 +513,7 @@ class SaveActivityOfflineRepository {
       String calDate = "";
       String? reqChannelId, lobCode, prodCode, businessType, leadType;
 
-      // ✅ FIX #4: Loop ALL rows (Android cursor loop parity)
+      //  Loop ALL rows (Android cursor loop parity)
       final leadRows = await db.query(
         "LeadDetails",
         where: "SrvcReqDtlCode = ?",
@@ -545,7 +538,7 @@ class SaveActivityOfflineRepository {
         }
       }
 
-      // ✅ FIX #1 & #5: Build dynamic WHERE - NO null in whereArgs
+      //  Build dynamic WHERE  NO null in whereArgs
       final whereParts = <String>[];
       final whereArgsList = <dynamic>[];
 
@@ -554,19 +547,19 @@ class SaveActivityOfflineRepository {
 
       if (calDate.isNotEmpty) {
         whereParts.add("date = ?");
-        whereArgsList.add(_enc(calDate)); // ✅ FIX #5: Direct add, no ternary
+        whereArgsList.add(_enc(calDate)); //  Direct add, no ternary
       }
       if (lobCode != null && lobCode.isNotEmpty) {
         whereParts.add("LOBCode = ?");
-        whereArgsList.add(_enc(lobCode)); // ✅ FIX #1 & #5: Direct add
+        whereArgsList.add(_enc(lobCode)); //  Direct add
       }
       if (prodCode != null && prodCode.isNotEmpty) {
         whereParts.add("ProdCode = ?");
-        whereArgsList.add(_enc(prodCode)); // ✅ FIX #1 & #5: Direct add
+        whereArgsList.add(_enc(prodCode)); // Direct add
       }
       if (leadType != null && leadType.isNotEmpty) {
         whereParts.add("BizType = ?");
-        whereArgsList.add(_enc(leadType)); // ✅ FIX #1 & #5: Direct add
+        whereArgsList.add(_enc(leadType)); // Direct add
       }
       whereParts.add("WIPLeads != 0");
 
@@ -892,7 +885,7 @@ class SaveActivityOfflineRepository {
 
       if (!_eq(leadType, "N")) return;
 
-      // ✅ FIX #1 & #5: Dynamic WHERE - NO null in whereArgs
+      // Dynamic WHERE - NO null in whereArgs
       final whereParts = <String>[];
       final whereArgsList = <dynamic>[];
 
@@ -905,15 +898,15 @@ class SaveActivityOfflineRepository {
       }
       if (lobCode != null && lobCode.isNotEmpty) {
         whereParts.add("LOBCode = ?");
-        whereArgsList.add(_enc(lobCode)); // ✅ FIX #1 & #5
+        whereArgsList.add(_enc(lobCode)); //
       }
       if (prodCode != null && prodCode.isNotEmpty) {
         whereParts.add("ProdCode = ?");
-        whereArgsList.add(_enc(prodCode)); // ✅ FIX #1 & #5
+        whereArgsList.add(_enc(prodCode)); //
       }
       if (leadType != null && leadType.isNotEmpty) {
         whereParts.add("BizType = ?");
-        whereArgsList.add(_enc(leadType)); // ✅ FIX #1 & #5
+        whereArgsList.add(_enc(leadType)); //
       }
 
       final calRows = await db.query(
@@ -945,7 +938,7 @@ class SaveActivityOfflineRepository {
       if (trackerRows.isEmpty) return;
       final tracker = trackerRows.first;
 
-      // ✅ Use passed selectedActivityCode
+      // Use passed selectedActivityCode
       String activityDate = "";
       switch (selectedActivityCode) {
         case "1":
@@ -1021,6 +1014,11 @@ class SaveActivityOfflineRepository {
           "ReferenceNo": _enc(referenceNo),
           "SyncStatus": _enc("Pending"),
         });
+        final countResult = await db.rawQuery(
+          'SELECT COUNT(*) as count FROM CalendarData_Mob',
+        );
+
+        print("TOTAL RECORDS IN DB: ${countResult.first['count']}");
       } else {
         await db.update(
           "CalendarData_Mob",
@@ -1034,6 +1032,11 @@ class SaveActivityOfflineRepository {
           whereArgs: [recId],
         );
       }
+      final countResult = await db.rawQuery(
+        'SELECT COUNT(*) as count FROM CalendarData_Mob',
+      );
+
+      print("TOTAL RECORDS IN DB: ${countResult.first['count']}");
 
       final parsed = _parseAndroidDate(activityDate);
       final createDTime = _formatAndroidDateTime(parsed);

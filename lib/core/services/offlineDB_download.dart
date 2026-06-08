@@ -9,7 +9,7 @@ class DBDownloadService {
     final dbPath = await getDatabasesPath();
 
     List<String> dbFiles = [
-      "OfflineDB.db",   //
+      "OfflineDB.db",   
       "ARTL_StatePin.db"
     ];
 

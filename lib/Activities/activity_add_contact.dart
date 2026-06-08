@@ -1,4 +1,3 @@
-import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bottom_nav/common/common_confirmation_popup.dart';
 import 'package:flutter_bottom_nav/common/common_primary_popup.dart';
@@ -161,11 +160,9 @@ class _AddCustomerContactScreenState extends State<AddCustomerContactScreen> {
           String programFlag = "AGNT";
           String paramValue = iIntermediaryCode;
 
-          // ✅ 1. Update UI instantly (like Android)
           _updatePrimaryLocally(index, isPrimaryMobileVal, isPrimaryEmailVal);
 
           try {
-            // ✅ 2. Call API
             final response = await markPrimaryContact(
               sapCode: StaticVariables.mSAPCode,
               programFlag: programFlag,
