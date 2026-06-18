@@ -2,23 +2,40 @@ import 'package:flutter_bottom_nav/database/database_helper.dart';
 import 'package:flutter_bottom_nav/common/encryption_util.dart';
 
 class ActivityRepository {
-
   // static String _getDecrypted(Map<String, dynamic> row, String key) {
   //   return EncryptionUtil.decrypt(row[key]?.toString() ?? "");
   // }
 
+  //   static String _getDecrypted(Map<String, dynamic> row, String key) {
+  //   if (!row.containsKey(key)) {
+  //     throw Exception("❌ Column missing in DB: $key");
+  //   }
+  //   return EncryptionUtil.decrypt(row[key]?.toString() ?? "");
+  // }
+
   static String _getDecrypted(Map<String, dynamic> row, String key) {
-  if (!row.containsKey(key)) {
-    throw Exception("❌ Column missing in DB: $key");
-  }
-  return EncryptionUtil.decrypt(row[key]?.toString() ?? "");
-}
+    if (!row.containsKey(key)) {
+      return '';
+    }
 
+    final value = row[key]?.toString() ?? '';
 
+    if (value.isEmpty) {
+      return '';
+    }
 
-  static Future<Map<String, dynamic>?> getActivityData(String srvcReqDtlCode) async {
     try {
+      return EncryptionUtil.decrypt(value) ?? '';
+    } catch (e) {
+      print('Unable to decrypt $key: $e');
+      return '';
+    }
+  }
 
+  static Future<Map<String, dynamic>?> getActivityData(
+    String srvcReqDtlCode,
+  ) async {
+    try {
       final db = await DatabaseHelper.instance.database;
 
       String enSrvcReqDtlCode = EncryptionUtil.encrypt(srvcReqDtlCode);
@@ -98,7 +115,10 @@ class ActivityRepository {
         "ChequeBankName": _getDecrypted(row, "ChequeBankName"),
         "RegistrationNo": _getDecrypted(row, "RegistrationNo"),
         "RenewalLeadLostReason": _getDecrypted(row, "RenewalLeadLostReason"),
-        "PolicyAlreadyRenewedReason": _getDecrypted(row, "PolicyAlreadyRenewedReason"),
+        "PolicyAlreadyRenewedReason": _getDecrypted(
+          row,
+          "PolicyAlreadyRenewedReason",
+        ),
         "ParkedLeadDateTime": _getDecrypted(row, "ParkedLeadDateTime"),
         "FollowupDt": _getDecrypted(row, "FollowupDt"),
         "QutationDt": _getDecrypted(row, "QutationDt"),
@@ -133,10 +153,19 @@ class ActivityRepository {
         "txt319": _getDecrypted(row, "txt319"),
         "txtRMSAppointmentDate": _getDecrypted(row, "txtRMSAppointmentDate"),
         "txtRMSCallBackDate": _getDecrypted(row, "txtRMSCallBackDate"),
-        "ddlRMSNonContactableReason": _getDecrypted(row, "ddlRMSNonContactableReason"),
+        "ddlRMSNonContactableReason": _getDecrypted(
+          row,
+          "ddlRMSNonContactableReason",
+        ),
         "txtRMSChequeNo": _getDecrypted(row, "txtRMSChequeNo"),
-        "ddlRMSRenewalLeadLostReason": _getDecrypted(row, "ddlRMSRenewalLeadLostReason"),
-        "ddlRMSPolicyAlreadyRenewedReason": _getDecrypted(row, "ddlRMSPolicyAlreadyRenewedReason"),
+        "ddlRMSRenewalLeadLostReason": _getDecrypted(
+          row,
+          "ddlRMSRenewalLeadLostReason",
+        ),
+        "ddlRMSPolicyAlreadyRenewedReason": _getDecrypted(
+          row,
+          "ddlRMSPolicyAlreadyRenewedReason",
+        ),
         "txtRMSMobileNo": _getDecrypted(row, "txtRMSMobileNo"),
         "txtAppointmentDate27": _getDecrypted(row, "txtAppointmentDate27"),
         "txtRescheduletDate28": _getDecrypted(row, "txtRescheduletDate28"),
@@ -151,7 +180,6 @@ class ActivityRepository {
         "NewPolEndDate": _getDecrypted(row, "NewPolEndDate"),
         "Remark": _getDecrypted(row, "Remark"),
       };
-
     } catch (e) {
       print("Repository Error: $e");
       return null;

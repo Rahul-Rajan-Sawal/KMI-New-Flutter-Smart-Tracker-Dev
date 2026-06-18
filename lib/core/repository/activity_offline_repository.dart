@@ -12,17 +12,76 @@ class SaveActivityOfflineRepository {
   static String? _dec(dynamic val) =>
       EncryptionUtil.decrypt(val?.toString() ?? "");
 
-  // DATE FORMATTING
+  // // DATE FORMATTING old
+  // static String convertFormatDate(String? inputDate) {
+  //   try {
+  //     if (inputDate == null || inputDate.isEmpty) return "";
+  //     final parsedDate = DateTime.parse(inputDate);
+  //     final day = parsedDate.day.toString().padLeft(2, '0');
+  //     final month = parsedDate.month.toString().padLeft(2, '0');
+  //     final year = parsedDate.year.toString();
+  //     return "$day-$month-$year";
+  //   } catch (e) {
+  //     return "";
+  //   }
+  // }
+
   static String convertFormatDate(String? inputDate) {
     try {
-      if (inputDate == null || inputDate.isEmpty) return "";
-      final parsedDate = DateTime.parse(inputDate);
-      final day = parsedDate.day.toString().padLeft(2, '0');
-      final month = parsedDate.month.toString().padLeft(2, '0');
-      final year = parsedDate.year.toString();
-      return "$day-$month-$year";
-    } catch (e) {
-      return "";
+      final value = inputDate?.trim() ?? '';
+
+      if (value.isEmpty) {
+        return '';
+      }
+
+      // Handles ISO/database format:
+      // 2026-06-16
+      // 2026-06-16 17:30:00.000
+      final isoDate = DateTime.tryParse(value);
+
+      if (isoDate != null) {
+        final day = isoDate.day.toString().padLeft(2, '0');
+        final month = isoDate.month.toString().padLeft(2, '0');
+
+        return '$day-$month-${isoDate.year}';
+      }
+
+      // Handles Android formats:
+      // 16-06-2026
+      // 16-06-2026 05:30 PM
+      // 16/06/2026
+      final match = RegExp(
+        r'^(\d{1,2})[-/](\d{1,2})[-/](\d{4})',
+      ).firstMatch(value);
+
+      if (match == null) {
+        return '';
+      }
+
+      final day = int.tryParse(match.group(1)!);
+      final month = int.tryParse(match.group(2)!);
+      final year = int.tryParse(match.group(3)!);
+
+      if (day == null || month == null || year == null) {
+        return '';
+      }
+
+      final parsedDate = DateTime(year, month, day);
+
+      if (parsedDate.day != day ||
+          parsedDate.month != month ||
+          parsedDate.year != year) {
+        return '';
+      }
+
+      final formattedDay = parsedDate.day.toString().padLeft(2, '0');
+
+      final formattedMonth = parsedDate.month.toString().padLeft(2, '0');
+
+      return '$formattedDay-$formattedMonth-${parsedDate.year}';
+    } catch (error) {
+      print('convertFormatDate error: $error');
+      return '';
     }
   }
 
@@ -956,6 +1015,21 @@ class SaveActivityOfflineRepository {
           break;
         case "32":
           activityDate = _dec(tracker["FollowupDt"]) ?? "";
+          break;
+        case "37":
+          final subActivityCode =
+              _dec(tracker["SubActivityCode"])?.trim() ?? "";
+
+          if (subActivityCode == "4") {
+            // Call Back
+            activityDate = _dec(tracker["CallBackDate"]) ?? "";
+          } else if (subActivityCode == "5") {
+            // Appointment Fixed
+            activityDate = _dec(tracker["AppointmentDate"]) ?? "";
+          } else {
+            // Non Contactable has no calendar movement date.
+            activityDate = "";
+          }
           break;
         default:
           activityDate = "";

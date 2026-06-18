@@ -58,14 +58,26 @@ class CalMstFilterNotifier extends StateNotifier<CalMstFilterState> {
     final updated = [...current];
     final exists = updated.any((item) => item.code == option.code);
 
+    // if (exists) {
+    //   updated.removeWhere((item) => item.code == option.code);
+    // } else {
+    //   if (option.code == 'All') {
+    //     return [option];
+    //   }
+
+    //   updated.removeWhere((item) => item.code == 'All');
+    //   updated.add(option);
+    // }
     if (exists) {
       updated.removeWhere((item) => item.code == option.code);
     } else {
-      if (option.code == 'All') {
+      final isAllOption = option.code == 'All' || option.code.isEmpty;
+
+      if (isAllOption) {
         return [option];
       }
 
-      updated.removeWhere((item) => item.code == 'All');
+      updated.removeWhere((item) => item.code == 'All' || item.code.isEmpty);
       updated.add(option);
     }
 
@@ -305,6 +317,7 @@ class CalMstFilterNotifier extends StateNotifier<CalMstFilterState> {
     state = state.copyWith(productGroups: productGroups, isLoading: false);
   }
 
+  //new added
   Future<void> toggleProductGroup(FilterOption productGroup) async {
     final selectedProductGroups = _toggleOption(
       state.selectedProductGroups,
@@ -314,10 +327,43 @@ class CalMstFilterNotifier extends StateNotifier<CalMstFilterState> {
 
     state = state.copyWith(
       selectedProductGroups: selectedProductGroups,
+
       selectedProducts: [],
       selectedProductSubCategories: [],
       products: [],
       productSubCategories: [],
+
+      selectedNilDep: [],
+      selectedCategory: [],
+      selectedMopedType: [],
+      selectedGvw: [],
+      selectedFuelType: [],
+      selectedMake: [],
+      selectedVehicleAgeGroup: [],
+      selectedSeatingCapacity: [],
+      selectedAgeGroup: [],
+      selectedFamilySize: [],
+      selectedSumInsuredBand: [],
+      selectedPreExisting: [],
+      selectedOccupancy: [],
+      selectedSumInsured: [],
+      selectedLifeGroup: [],
+
+      nilDepOptions: [],
+      categoryOptions: [],
+      mopedTypeOptions: [],
+      gvwOptions: [],
+      fuelTypeOptions: [],
+      vehicleAgeGroupOptions: [],
+      seatingCapacityOptions: [],
+      ageGroupOptions: [],
+      familySizeOptions: [],
+      sumInsuredBandOptions: [],
+      preExistingOptions: [],
+      occupancyOptions: [],
+      sumInsuredOptions: [],
+      lifeGroupOptions: [],
+
       isLoading: true,
     );
 
@@ -339,20 +385,116 @@ class CalMstFilterNotifier extends StateNotifier<CalMstFilterState> {
           )
         : <FilterOption>[];
 
+    final lookupCache = state.lookupCache.isEmpty
+        ? await repo.getAllLookupOptions()
+        : state.lookupCache;
+
+    final makeOptions = state.makeOptions.isEmpty
+        ? await repo.getVehicleMakes()
+        : state.makeOptions;
+
+    final dynamicDropdowns = hasProductGroup
+        ? repo.getDynamicProductDropdownsFromCache(
+            productGroup: selectedProductGroups.first.code,
+            lookupCache: lookupCache,
+            makeOptions: makeOptions,
+          )
+        : <String, List<FilterOption>>{};
+
+    print(
+      "PRODUCT GROUP: ${hasProductGroup ? selectedProductGroups.first.code : ''}",
+    );
+    print("LOOKUP CACHE KEYS: ${lookupCache.keys.toList()}");
+    print("MAKE COUNT: ${makeOptions.length}");
+    print("NIL DEP COUNT: ${dynamicDropdowns['nilDep']?.length}");
+    print("CATEGORY COUNT: ${dynamicDropdowns['category']?.length}");
+    print("GVW COUNT: ${dynamicDropdowns['gvw']?.length}");
+    print("FUEL TYPE COUNT: ${dynamicDropdowns['fuelType']?.length}");
+    print("VEHICLE AGE COUNT: ${dynamicDropdowns['vehicleAgeGroup']?.length}");
+    print("SEATING COUNT: ${dynamicDropdowns['seatingCapacity']?.length}");
+    print("OCCUPANCY COUNT: ${dynamicDropdowns['occupancy']?.length}");
+    print("SUM INSURED COUNT: ${dynamicDropdowns['sumInsured']?.length}");
+
     state = state.copyWith(
       products: products,
       productSubCategories: productSubCategories,
+
+      lookupCache: lookupCache,
+      makeOptions: makeOptions,
+
+      nilDepOptions: dynamicDropdowns['nilDep'] ?? [],
+      categoryOptions: dynamicDropdowns['category'] ?? [],
+      mopedTypeOptions: dynamicDropdowns['mopedType'] ?? [],
+      gvwOptions: dynamicDropdowns['gvw'] ?? [],
+      fuelTypeOptions: dynamicDropdowns['fuelType'] ?? [],
+      vehicleAgeGroupOptions: dynamicDropdowns['vehicleAgeGroup'] ?? [],
+      seatingCapacityOptions: dynamicDropdowns['seatingCapacity'] ?? [],
+      ageGroupOptions: dynamicDropdowns['ageGroup'] ?? [],
+      familySizeOptions: dynamicDropdowns['familySize'] ?? [],
+      sumInsuredBandOptions: dynamicDropdowns['sumInsuredBand'] ?? [],
+      preExistingOptions: dynamicDropdowns['preExisting'] ?? [],
+      occupancyOptions: dynamicDropdowns['occupancy'] ?? [],
+      sumInsuredOptions: dynamicDropdowns['sumInsured'] ?? [],
+      lifeGroupOptions: dynamicDropdowns['lifeGroup'] ?? [],
+
       isLoading: false,
     );
   }
+  //Commeted for sub dropdowns
+  // Future<void> toggleProductGroup(FilterOption productGroup) async {
+  //   final selectedProductGroups = _toggleOption(
+  //     state.selectedProductGroups,
+  //     productGroup,
+  //     single: true,
+  //   );
+
+  //   state = state.copyWith(
+  //     selectedProductGroups: selectedProductGroups,
+  //     selectedProducts: [],
+  //     selectedProductSubCategories: [],
+  //     products: [],
+  //     productSubCategories: [],
+  //     isLoading: true,
+  //   );
+
+  //   final repo = ref.read(filterRepositoryProvider);
+
+  //   final hasLob = state.selectedLobs.isNotEmpty;
+  //   final hasProductGroup = selectedProductGroups.isNotEmpty;
+
+  //   final products = hasLob && hasProductGroup
+  //       ? await repo.getProducts(
+  //           lobCode: state.selectedLobs.first.code,
+  //           productGroup: selectedProductGroups.first.code,
+  //         )
+  //       : <FilterOption>[];
+
+  //   final productSubCategories = hasProductGroup
+  //       ? await repo.getProductSubCategories(
+  //           productGroups: _codes(selectedProductGroups),
+  //         )
+  //       : <FilterOption>[];
+
+  //   state = state.copyWith(
+  //     products: products,
+  //     productSubCategories: productSubCategories,
+  //     isLoading: false,
+  //   );
+  // }
+
+  // void toggleProduct(FilterOption product) {
+  //   state = state.copyWith(
+  //     selectedProducts: _toggleOption(
+  //       state.selectedProducts,
+  //       product,
+  //       single: true,
+  //     ),
+  //   );
+  // }
 
   void toggleProduct(FilterOption product) {
     state = state.copyWith(
-      selectedProducts: _toggleOption(
-        state.selectedProducts,
-        product,
-        single: true,
-      ),
+      selectedProducts: _toggleOption(state.selectedProducts, product),
     );
   }
 

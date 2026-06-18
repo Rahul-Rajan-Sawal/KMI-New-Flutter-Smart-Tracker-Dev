@@ -5,6 +5,7 @@ import 'package:flutter_bottom_nav/core/apicall/async_search_customer_contact.da
 import 'package:flutter_bottom_nav/core/repository/view_details_repository.dart';
 import 'package:flutter_bottom_nav/core/static_variables.dart';
 import 'package:flutter_bottom_nav/database/dbcopyhelper.dart';
+import 'package:flutter_bottom_nav/database/offline_DB_helper.dart';
 
 class ViewDetails extends StatefulWidget {
   final Map<String, dynamic> lead;
@@ -45,6 +46,7 @@ class _ViewDetailsState extends State<ViewDetails> {
   late String ncb;
   late String addOn;
   late String activityStatus;
+  late String activityStatusDesc;
   late String activityDoneBy;
   late String activityDate;
   late String remark;
@@ -59,6 +61,46 @@ class _ViewDetailsState extends State<ViewDetails> {
   late String renewalNotice;
 
   final repo = ViewDetailsRepository();
+
+  Future<String> getActivityDescription(String activityCode) async {
+    if (activityCode.trim().isEmpty || activityCode == "Not Available") {
+      return "Not Available";
+    }
+
+    try {
+      final db = await OfflineDBHelper.getDatabase();
+
+      final result = await db.query(
+        "CBLMSMSTActivity", // confirm actual Flutter table name
+        columns: ["ActivityDesc1"],
+        where: "ActivityCode = ?",
+        whereArgs: [activityCode],
+        limit: 1,
+      );
+
+      if (result.isNotEmpty) {
+        final description = result.first["ActivityDesc1"]?.toString().trim();
+
+        if (description != null && description.isNotEmpty) {
+          return description;
+        }
+      }
+    } catch (e) {
+      debugPrint("Error getting activity description for $activityCode: $e");
+    }
+
+    return "Not Available";
+  }
+
+  Future<void> loadActivityDescription() async {
+    final description = await getActivityDescription(activityStatus);
+
+    if (!mounted) return;
+
+    setState(() {
+      activityStatusDesc = description;
+    });
+  }
 
   Future<void> loadBridgeCallTime() async {
     final data = await repo.getBridgeCallTimes(StaticVariables.mSAPCode);
@@ -111,6 +153,12 @@ class _ViewDetailsState extends State<ViewDetails> {
 
     activityStatus = safeValue(widget.decryptedLead['ActivityStatus']);
 
+    // ActivityStatus contains the code from LeadDetails.
+    activityStatus = safeValue(widget.decryptedLead['ActivityStatus']);
+
+    // Description is loaded from CBLMSMSTActivity.
+    activityStatusDesc = "Not Available";
+    loadActivityDescription();
     activity = safeValue(widget.decryptedLead['TelesaleActivity']);
     activityDoneBy = safeValue(widget.decryptedLead['TelesaleActivityDoneBy']);
     activityDate = safeValue(widget.decryptedLead['TelesaleActivityDate']);
@@ -233,9 +281,9 @@ class _ViewDetailsState extends State<ViewDetails> {
                                               title: "Unable to make call",
                                               message:
                                                   "You cannot initiate a call within $bridgeCallDownTime minutes",
-                                              onOk: (){
+                                              onOk: () {
                                                 Navigator.pop(context);
-                                              }
+                                              },
                                             );
                                           },
                                         );
@@ -665,7 +713,7 @@ class _ViewDetailsState extends State<ViewDetails> {
                               child: Padding(
                                 padding: EdgeInsets.symmetric(vertical: 5),
                                 child: Text(
-                                  ": $activityStatus",
+                                  ": $activityStatusDesc",
                                   style: TextStyle(
                                     fontSize: 15,
                                     fontWeight: FontWeight.w600,

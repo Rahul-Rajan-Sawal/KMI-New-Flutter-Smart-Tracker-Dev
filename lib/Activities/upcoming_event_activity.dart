@@ -7,6 +7,7 @@ import 'package:flutter_bottom_nav/core/apicall/async_get_single_lead_details.da
 import 'package:flutter_bottom_nav/core/repository/schedules/schedule_repository.dart';
 import 'package:flutter_bottom_nav/core/static_variables.dart';
 import 'package:flutter_bottom_nav/database/database_helper.dart';
+import 'package:flutter_bottom_nav/database/offline_DB_helper.dart';
 import 'package:intl/intl.dart';
 // import 'package:path/path.dart';  commented for the context error
 
@@ -32,6 +33,7 @@ class _UpcomingEventActivity extends State<UpcomingEventActivity> {
   List<String> productCodeList = [];
   String selectedProductCode = "";
   final ScheduleRepository repository = ScheduleRepository();
+  final Map<String, String> _activityDescriptionCache = {};
   @override
   void initState() {
     super.initState();
@@ -42,6 +44,47 @@ class _UpcomingEventActivity extends State<UpcomingEventActivity> {
       applyFilter();
     });
     //getProductList();
+  }
+
+  //getting activity desc from activity status code
+  Future<String> getActivityDescription(String activityCode) async {
+    final code = activityCode.trim();
+
+    if (code.isEmpty || code == "Not Available") {
+      return "Not Available";
+    }
+
+    // Return already-loaded description.
+    if (_activityDescriptionCache.containsKey(code)) {
+      return _activityDescriptionCache[code]!;
+    }
+
+    try {
+      final db = await OfflineDBHelper.getDatabase();
+
+      final result = await db.query(
+        "CBLMSMSTActivity",
+        columns: ["ActivityDesc1"],
+        where: "ActivityCode = ?",
+        whereArgs: [code],
+        limit: 1,
+      );
+
+      if (result.isNotEmpty) {
+        final description =
+            result.first["ActivityDesc1"]?.toString().trim() ?? "";
+
+        if (description.isNotEmpty) {
+          _activityDescriptionCache[code] = description;
+          return description;
+        }
+      }
+    } catch (e) {
+      debugPrint("Error getting activity description for $code: $e");
+    }
+
+    _activityDescriptionCache[code] = "Not Available";
+    return "Not Available";
   }
 
   String getActivityTrackerDate(
@@ -206,9 +249,13 @@ class _UpcomingEventActivity extends State<UpcomingEventActivity> {
           leadResult.first,
         );
 
+        final activityDescription = await getActivityDescription(activityCode);
+
         leadData["ScheduleDate"] = activityDate;
 
         leadData["ActivityCode"] = activityCode;
+
+        leadData["ActivityDescription"] = activityDescription;
 
         finalList.add(leadData);
       } catch (e) {
@@ -313,78 +360,6 @@ class _UpcomingEventActivity extends State<UpcomingEventActivity> {
       print("Error $e");
     }
   }
-
-  // Future<void> callApi() async {
-  //   try {
-  //     //final curMonth = getFirstDayOfMonth();
-  //     final curMonth = "01-05-2026";
-  //     final response = await GetAllAssignedLeads(
-  //       sapCode: StaticVariables.mSAPCode,
-  //       CurMonth: curMonth,
-  //       lastSyncDate: lsd,
-  //     );
-
-  //     final db = await DatabaseHelper.instance.database;
-  //     //Clearing the Old Data
-  //     await db.delete(
-  //       "LeadDetails",
-  //       where: "UserId = ?",
-  //       whereArgs: [StaticVariables.mSAPCode],
-  //     );
-
-  //     //"": "",    "LastSyncDate": "",
-
-  //     //API list
-  //     List<dynamic> apiData = response["Table"];
-
-  //     print(
-  //       "Data in api res==============================================================================",
-  //     );
-  //     for (var item in apiData) {
-  //       // print(item);\
-  //       print(apiData[0]);
-  //     }
-
-  //     print(
-  //       "Data in api res==============================================================================",
-  //     );
-
-  //     //Inserting in the existing table
-  //     for (var item in apiData) {
-  //       await db.insert("LeadDetails", {
-  //         "UserId": StaticVariables.mSAPCode,
-  //         "SrvcReqDtlCode": item["SrvcReqDtlCode"],
-  //         "LOB": item["LOB"],
-  //         "ProdCode": item["ProdCode"],
-  //         "ProdName": item["ProdName"],
-  //         "Name": item["Name"],
-  //         "MobileTel": item["MobileTel"],
-  //         "PolicyNo": item["PolicyNo"],
-  //         "LeadTypeDesc": item["LeadTypeDesc"],
-  //         "BusinessTypeDesc": item["BusinessTypeDesc"],
-  //       });
-  //     }
-
-  //     //Load Again From DB
-  //     final localData = await db.query(
-  //       "LeadDetails",
-  //       where: "UserId = ?",
-  //       whereArgs: [StaticVariables.mSAPCode],
-  //     );
-
-  //     print(localData);
-
-  //     setState(() {
-  //       leadList = localData;
-  //     });
-
-  //     await getProductList();
-
-  //     print("Response $response");
-  //   } catch (e) {
-  //     print("Error Code: $e");
-  //   }
-  // }
 
   String selectedTab = "schedule";
   String filterMessage = "Showing acitivies for next 5days";
@@ -1186,7 +1161,7 @@ class _UpcomingEventActivity extends State<UpcomingEventActivity> {
             // DIFFERENT FIELDS
             "date": displayDate,
 
-            "leadStatus": item["ActivityCode"]?.toString() ?? "Schedule",
+            "leadStatus": item["ActivityDescription"]?.toString() ?? "Schedule",
 
             "mobileNumber": item["MobileTel"] ?? "",
           },

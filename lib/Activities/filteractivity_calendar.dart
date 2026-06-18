@@ -560,6 +560,35 @@ class _CalendarFilterActivityState
                         preferred: latestMstState.selectedPreferred
                             .map((e) => e.code)
                             .toList(),
+                        nilDep: _firstCode(latestMstState.selectedNilDep),
+                        categoryName: _firstCode(
+                          latestMstState.selectedCategory,
+                        ),
+                        mopedType: _firstCode(latestMstState.selectedMopedType),
+                        gvw: _firstCode(latestMstState.selectedGvw),
+                        fuelType: _firstCode(latestMstState.selectedFuelType),
+                        make: _firstCode(latestMstState.selectedMake),
+                        vehicleAgeGrp: _firstCode(
+                          latestMstState.selectedVehicleAgeGroup,
+                        ),
+                        seatingCapacity: _firstCode(
+                          latestMstState.selectedSeatingCapacity,
+                        ),
+                        ageGroup: _firstCode(latestMstState.selectedAgeGroup),
+                        familySize: _firstCode(
+                          latestMstState.selectedFamilySize,
+                        ),
+                        sumInsuredBand: _firstCode(
+                          latestMstState.selectedSumInsuredBand,
+                        ),
+                        preExisting: _firstCode(
+                          latestMstState.selectedPreExisting,
+                        ),
+                        occupancy: _firstCode(latestMstState.selectedOccupancy),
+                        sumInsured: _firstCode(
+                          latestMstState.selectedSumInsured,
+                        ),
+                        lifeGroup: _firstCode(latestMstState.selectedLifeGroup),
                       );
 
                       ref
@@ -750,6 +779,10 @@ class _CalendarFilterActivityState
     );
   }
 
+  String? _firstCode(List<FilterOption> options) {
+    return options.isNotEmpty ? options.first.code : null;
+  }
+
   List<String> _generateMonthList() {
     final now = DateTime.now();
     final months = <String>[];
@@ -782,284 +815,278 @@ class _CalendarFilterActivityState
   }
 
   Widget _buildSingleDropdown({
-  required String label,
-  required List<FilterOption> options,
-  required List<FilterOption> selectedOptions,
-  required void Function(FilterOption option) onChanged,
-}) {
-  final selectedCode =
-      selectedOptions.isNotEmpty ? selectedOptions.first.code : null;
+    required String label,
+    required List<FilterOption> options,
+    required List<FilterOption> selectedOptions,
+    required void Function(FilterOption option) onChanged,
+  }) {
+    final selectedCode = selectedOptions.isNotEmpty
+        ? selectedOptions.first.code
+        : null;
 
-  return Padding(
-    padding: const EdgeInsets.only(bottom: 14),
-    child: DropdownButtonFormField<String>(
-      value: options.any((item) => item.code == selectedCode)
-          ? selectedCode
-          : null,
-      isExpanded: true,
-      decoration: InputDecoration(
-        labelText: label,
-        border: const OutlineInputBorder(),
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 12,
-          vertical: 10,
-        ),
-      ),
-      items: options.map((option) {
-        return DropdownMenuItem<String>(
-          value: option.code,
-          child: Text(
-            option.description,
-            overflow: TextOverflow.ellipsis,
-          ),
-        );
-      }).toList(),
-      onChanged: options.isEmpty
-          ? null
-          : (value) {
-              if (value == null) return;
-
-              final selectedOption = options.firstWhere(
-                (item) => item.code == value,
-              );
-
-              onChanged(selectedOption);
-            },
-    ),
-  );
-}
-
-Widget _buildCheckboxGroup({
-  required String title,
-  required List<FilterOption> options,
-  required List<FilterOption> selectedOptions,
-  required void Function(FilterOption option) onToggle,
-}) {
-  if (options.isEmpty) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Text(
-        "$title options not available",
-        style: const TextStyle(color: Colors.grey),
-      ),
-    );
-  }
-
-  return Container(
-    margin: const EdgeInsets.only(bottom: 16),
-    padding: const EdgeInsets.all(8),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      border: Border.all(color: Colors.black12),
-      borderRadius: BorderRadius.circular(6),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 15,
+      padding: const EdgeInsets.only(bottom: 14),
+      child: DropdownButtonFormField<String>(
+        value: options.any((item) => item.code == selectedCode)
+            ? selectedCode
+            : null,
+        isExpanded: true,
+        decoration: InputDecoration(
+          labelText: label,
+          border: const OutlineInputBorder(),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 10,
           ),
         ),
-        const SizedBox(height: 8),
-
-        ...options.map((option) {
-          return CheckboxListTile(
-            dense: true,
-            contentPadding: EdgeInsets.zero,
-            value: selectedOptions.any((item) => item.code == option.code),
-            onChanged: (_) => onToggle(option),
-            title: Text(option.description),
+        items: options.map((option) {
+          return DropdownMenuItem<String>(
+            value: option.code,
+            child: Text(option.description, overflow: TextOverflow.ellipsis),
           );
-        }),
-      ],
-    ),
-  );
-}
+        }).toList(),
+        onChanged: options.isEmpty
+            ? null
+            : (value) {
+                if (value == null) return;
 
-Widget _buildProductDropdownSection(
-  CalMstFilterState mstState,
-  CalMstFilterNotifier mstNotifier,
-) {
-  if (mstState.selectedProductGroups.isEmpty) {
-    return const Center(
-      child: Text( 
-        
-        "Product group selection is mandatory before Product selection.",
-        textAlign: TextAlign.center,
-        style: TextStyle(fontSize: 16, color: Colors.grey),
+                final selectedOption = options.firstWhere(
+                  (item) => item.code == value,
+                );
+
+                onChanged(selectedOption);
+              },
       ),
     );
   }
 
-  final productGroup = mstState.selectedProductGroups.first.code
-      .trim()
-      .toLowerCase();
+  Widget _buildCheckboxGroup({
+    required String title,
+    required List<FilterOption> options,
+    required List<FilterOption> selectedOptions,
+    required void Function(FilterOption option) onToggle,
+  }) {
+    if (options.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 16),
+        child: Text(
+          "$title options not available",
+          style: const TextStyle(color: Colors.grey),
+        ),
+      );
+    }
 
-  return ListView(
-    children: [
-      _buildCheckboxGroup(
-        title: "Product",
-        options: mstState.products,
-        selectedOptions: mstState.selectedProducts,
-        onToggle: mstNotifier.toggleProduct,
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: Colors.black12),
+        borderRadius: BorderRadius.circular(6),
       ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+          ),
+          const SizedBox(height: 8),
 
-      if (productGroup == "pvt") ...[
-        _buildSingleDropdown(
-          label: "Nil Dep",
-          options: mstState.nilDepOptions,
-          selectedOptions: mstState.selectedNilDep,
-          onChanged: mstNotifier.toggleNilDep,
-        ),
-        _buildSingleDropdown(
-          label: "Category",
-          options: mstState.categoryOptions,
-          selectedOptions: mstState.selectedCategory,
-          onChanged: mstNotifier.toggleCategory,
-        ),
-        _buildSingleDropdown(
-          label: "Fuel Type",
-          options: mstState.fuelTypeOptions,
-          selectedOptions: mstState.selectedFuelType,
-          onChanged: mstNotifier.toggleFuelType,
-        ),
-        _buildSingleDropdown(
-          label: "Make",
-          options: mstState.makeOptions,
-          selectedOptions: mstState.selectedMake,
-          onChanged: mstNotifier.toggleMake,
-        ),
-        _buildSingleDropdown(
-          label: "Vehicle Age Group",
-          options: mstState.vehicleAgeGroupOptions,
-          selectedOptions: mstState.selectedVehicleAgeGroup,
-          onChanged: mstNotifier.toggleVehicleAgeGroup,
-        ),
-      ],
+          ...options.map((option) {
+            return CheckboxListTile(
+              dense: true,
+              contentPadding: EdgeInsets.zero,
+              value: selectedOptions.any((item) => item.code == option.code),
+              onChanged: (_) => onToggle(option),
+              title: Text(option.description),
+            );
+          }),
+        ],
+      ),
+    );
+  }
 
-      if (productGroup == "2w") ...[
-        _buildSingleDropdown(
-          label: "Nil Dep",
-          options: mstState.nilDepOptions,
-          selectedOptions: mstState.selectedNilDep,
-          onChanged: mstNotifier.toggleNilDep,
+  Widget _buildProductDropdownSection(
+    CalMstFilterState mstState,
+    CalMstFilterNotifier mstNotifier,
+  ) {
+    if (mstState.selectedProductGroups.isEmpty) {
+      return const Center(
+        child: Text(
+          "Product group selection is mandatory before Product selection.",
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 16, color: Colors.grey),
         ),
-        _buildSingleDropdown(
-          label: "Moped Type",
-          options: mstState.mopedTypeOptions,
-          selectedOptions: mstState.selectedMopedType,
-          onChanged: mstNotifier.toggleMopedType,
-        ),
-        _buildSingleDropdown(
-          label: "Make",
-          options: mstState.makeOptions,
-          selectedOptions: mstState.selectedMake,
-          onChanged: mstNotifier.toggleMake,
-        ),
-        _buildSingleDropdown(
-          label: "Vehicle Age Group",
-          options: mstState.vehicleAgeGroupOptions,
-          selectedOptions: mstState.selectedVehicleAgeGroup,
-          onChanged: mstNotifier.toggleVehicleAgeGroup,
-        ),
-      ],
+      );
+    }
 
-      if (productGroup == "pcv" || productGroup == "gcv") ...[
-        _buildSingleDropdown(
-          label: "Nil Dep",
-          options: mstState.nilDepOptions,
-          selectedOptions: mstState.selectedNilDep,
-          onChanged: mstNotifier.toggleNilDep,
-        ),
-        _buildSingleDropdown(
-          label: "GVW",
-          options: mstState.gvwOptions,
-          selectedOptions: mstState.selectedGvw,
-          onChanged: mstNotifier.toggleGvw,
-        ),
-        _buildSingleDropdown(
-          label: "Make",
-          options: mstState.makeOptions,
-          selectedOptions: mstState.selectedMake,
-          onChanged: mstNotifier.toggleMake,
-        ),
-        _buildSingleDropdown(
-          label: "Vehicle Age Group",
-          options: mstState.vehicleAgeGroupOptions,
-          selectedOptions: mstState.selectedVehicleAgeGroup,
-          onChanged: mstNotifier.toggleVehicleAgeGroup,
-        ),
-        _buildSingleDropdown(
-          label: "Seating Capacity",
-          options: mstState.seatingCapacityOptions,
-          selectedOptions: mstState.selectedSeatingCapacity,
-          onChanged: mstNotifier.toggleSeatingCapacity,
-        ),
-      ],
+    final productGroup = mstState.selectedProductGroups.first.code
+        .trim()
+        .toLowerCase();
 
-      if (productGroup == "retail health") ...[
-        _buildSingleDropdown(
-          label: "Age Group",
-          options: mstState.ageGroupOptions,
-          selectedOptions: mstState.selectedAgeGroup,
-          onChanged: mstNotifier.toggleAgeGroup,
+    return ListView(
+      children: [
+        _buildCheckboxGroup(
+          title: "Product",
+          options: mstState.products,
+          selectedOptions: mstState.selectedProducts,
+          onToggle: mstNotifier.toggleProduct,
         ),
-        _buildSingleDropdown(
-          label: "Family Size",
-          options: mstState.familySizeOptions,
-          selectedOptions: mstState.selectedFamilySize,
-          onChanged: mstNotifier.toggleFamilySize,
-        ),
-        _buildSingleDropdown(
-          label: "Sum Insured Band",
-          options: mstState.sumInsuredBandOptions,
-          selectedOptions: mstState.selectedSumInsuredBand,
-          onChanged: mstNotifier.toggleSumInsuredBand,
-        ),
-        _buildSingleDropdown(
-          label: "Pre Existing",
-          options: mstState.preExistingOptions,
-          selectedOptions: mstState.selectedPreExisting,
-          onChanged: mstNotifier.togglePreExisting,
-        ),
-      ],
 
-      if (productGroup == "commercial lines") ...[
-        _buildSingleDropdown(
-          label: "Occupancy",
-          options: mstState.occupancyOptions,
-          selectedOptions: mstState.selectedOccupancy,
-          onChanged: mstNotifier.toggleOccupancy,
-        ),
-        _buildSingleDropdown(
-          label: "Sum Insured",
-          options: mstState.sumInsuredOptions,
-          selectedOptions: mstState.selectedSumInsured,
-          onChanged: mstNotifier.toggleSumInsured,
-        ),
-      ],
+        if (productGroup == "pvt") ...[
+          _buildSingleDropdown(
+            label: "Nil Dep",
+            options: mstState.nilDepOptions,
+            selectedOptions: mstState.selectedNilDep,
+            onChanged: mstNotifier.toggleNilDep,
+          ),
+          _buildSingleDropdown(
+            label: "Category",
+            options: mstState.categoryOptions,
+            selectedOptions: mstState.selectedCategory,
+            onChanged: mstNotifier.toggleCategory,
+          ),
+          _buildSingleDropdown(
+            label: "Fuel Type",
+            options: mstState.fuelTypeOptions,
+            selectedOptions: mstState.selectedFuelType,
+            onChanged: mstNotifier.toggleFuelType,
+          ),
+          _buildSingleDropdown(
+            label: "Make",
+            options: mstState.makeOptions,
+            selectedOptions: mstState.selectedMake,
+            onChanged: mstNotifier.toggleMake,
+          ),
+          _buildSingleDropdown(
+            label: "Vehicle Age Group",
+            options: mstState.vehicleAgeGroupOptions,
+            selectedOptions: mstState.selectedVehicleAgeGroup,
+            onChanged: mstNotifier.toggleVehicleAgeGroup,
+          ),
+        ],
 
-      if (productGroup == "gmc/gpa") ...[
-        _buildSingleDropdown(
-          label: "Life Group",
-          options: mstState.lifeGroupOptions,
-          selectedOptions: mstState.selectedLifeGroup,
-          onChanged: mstNotifier.toggleLifeGroup,
-        ),
-      ],
+        if (productGroup == "2w") ...[
+          _buildSingleDropdown(
+            label: "Nil Dep",
+            options: mstState.nilDepOptions,
+            selectedOptions: mstState.selectedNilDep,
+            onChanged: mstNotifier.toggleNilDep,
+          ),
+          _buildSingleDropdown(
+            label: "Moped Type",
+            options: mstState.mopedTypeOptions,
+            selectedOptions: mstState.selectedMopedType,
+            onChanged: mstNotifier.toggleMopedType,
+          ),
+          _buildSingleDropdown(
+            label: "Make",
+            options: mstState.makeOptions,
+            selectedOptions: mstState.selectedMake,
+            onChanged: mstNotifier.toggleMake,
+          ),
+          _buildSingleDropdown(
+            label: "Vehicle Age Group",
+            options: mstState.vehicleAgeGroupOptions,
+            selectedOptions: mstState.selectedVehicleAgeGroup,
+            onChanged: mstNotifier.toggleVehicleAgeGroup,
+          ),
+        ],
 
-      if (productGroup == "others") ...[
-        _buildSingleDropdown(
-          label: "Sum Insured Band",
-          options: mstState.sumInsuredBandOptions,
-          selectedOptions: mstState.selectedSumInsuredBand,
-          onChanged: mstNotifier.toggleSumInsuredBand,
-        ),
+        if (productGroup == "pcv" || productGroup == "gcv") ...[
+          _buildSingleDropdown(
+            label: "Nil Dep",
+            options: mstState.nilDepOptions,
+            selectedOptions: mstState.selectedNilDep,
+            onChanged: mstNotifier.toggleNilDep,
+          ),
+          _buildSingleDropdown(
+            label: "GVW",
+            options: mstState.gvwOptions,
+            selectedOptions: mstState.selectedGvw,
+            onChanged: mstNotifier.toggleGvw,
+          ),
+          _buildSingleDropdown(
+            label: "Make",
+            options: mstState.makeOptions,
+            selectedOptions: mstState.selectedMake,
+            onChanged: mstNotifier.toggleMake,
+          ),
+          _buildSingleDropdown(
+            label: "Vehicle Age Group",
+            options: mstState.vehicleAgeGroupOptions,
+            selectedOptions: mstState.selectedVehicleAgeGroup,
+            onChanged: mstNotifier.toggleVehicleAgeGroup,
+          ),
+          _buildSingleDropdown(
+            label: "Seating Capacity",
+            options: mstState.seatingCapacityOptions,
+            selectedOptions: mstState.selectedSeatingCapacity,
+            onChanged: mstNotifier.toggleSeatingCapacity,
+          ),
+        ],
+
+        if (productGroup == "retail health") ...[
+          _buildSingleDropdown(
+            label: "Age Group",
+            options: mstState.ageGroupOptions,
+            selectedOptions: mstState.selectedAgeGroup,
+            onChanged: mstNotifier.toggleAgeGroup,
+          ),
+          _buildSingleDropdown(
+            label: "Family Size",
+            options: mstState.familySizeOptions,
+            selectedOptions: mstState.selectedFamilySize,
+            onChanged: mstNotifier.toggleFamilySize,
+          ),
+          _buildSingleDropdown(
+            label: "Sum Insured Band",
+            options: mstState.sumInsuredBandOptions,
+            selectedOptions: mstState.selectedSumInsuredBand,
+            onChanged: mstNotifier.toggleSumInsuredBand,
+          ),
+          _buildSingleDropdown(
+            label: "Pre Existing",
+            options: mstState.preExistingOptions,
+            selectedOptions: mstState.selectedPreExisting,
+            onChanged: mstNotifier.togglePreExisting,
+          ),
+        ],
+
+        if (productGroup == "commercial lines") ...[
+          _buildSingleDropdown(
+            label: "Occupancy",
+            options: mstState.occupancyOptions,
+            selectedOptions: mstState.selectedOccupancy,
+            onChanged: mstNotifier.toggleOccupancy,
+          ),
+          _buildSingleDropdown(
+            label: "Sum Insured",
+            options: mstState.sumInsuredOptions,
+            selectedOptions: mstState.selectedSumInsured,
+            onChanged: mstNotifier.toggleSumInsured,
+          ),
+        ],
+
+        if (productGroup == "gmc/gpa") ...[
+          _buildSingleDropdown(
+            label: "Life Group",
+            options: mstState.lifeGroupOptions,
+            selectedOptions: mstState.selectedLifeGroup,
+            onChanged: mstNotifier.toggleLifeGroup,
+          ),
+        ],
+
+        if (productGroup == "others") ...[
+          _buildSingleDropdown(
+            label: "Sum Insured Band",
+            options: mstState.sumInsuredBandOptions,
+            selectedOptions: mstState.selectedSumInsuredBand,
+            onChanged: mstNotifier.toggleSumInsuredBand,
+          ),
+        ],
       ],
-    ],
-  );
-}
+    );
+  }
 }

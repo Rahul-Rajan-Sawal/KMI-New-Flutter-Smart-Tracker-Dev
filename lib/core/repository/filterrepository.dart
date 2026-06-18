@@ -574,63 +574,120 @@ class FilterRepository {
     return [const FilterOption(code: 'All', description: 'All'), ...options];
   }
 
-  Future<List<FilterOption>> getProductSubCategories({
-    required List<String> productGroups,
-  }) async {
-    if (productGroups.isEmpty) return [];
 
-    final db = await dbHelper.database;
+Future<List<FilterOption>> getProductSubCategories({
+  required List<String> productGroups,
+}) async {
+  if (productGroups.isEmpty) return [];
 
-    //  String eproductGroups = CommonUtil.encryptIfNotEmpty(productGroups);
-    if (productGroups.isEmpty) return [];
+  final db = await OfflineDBHelper.getDatabase();
 
-    final groups = productGroups.where((e) => e != 'All').toList();
+  // Android uses Product Group description as LookupCode.
+  // So provider should send selectedProductGroups.map((e) => e.description).
+  final groups = productGroups
+      .where((e) => e.trim().isNotEmpty && e != 'All')
+      .toList();
 
-    if (groups.isEmpty) {
-      return [];
-    }
+  if (groups.isEmpty) return [];
 
-    final eProductGroups = groups
-        .map((e) => CommonUtil.encryptIfNotEmpty(e))
-        .toList();
+  final result = await db.rawQuery(
+    '''
+    SELECT DISTINCT ParamValue, ParamDesc1, SortOrder
+    FROM Lookupsu
+    WHERE LookupCode IN (${_placeholders(groups.length)})
+    AND ${_valid('ParamValue')}
+    AND ${_valid('ParamDesc1')}
+    ORDER BY CAST(SortOrder AS INTEGER)
+    ''',
+    groups,
+  );
 
-    final result = await db.rawQuery('''
-      SELECT DISTINCT ParamValue, ParamDesc1, SortOrder
-      FROM LookUpSU
-      WHERE LookUpCode IN (${_placeholders(eProductGroups.length)})
-      AND ${_valid('ParamValue')}
-      AND ${_valid('ParamDesc1')}
-      ORDER BY CAST(SortOrder AS INTEGER)
-      ''', eProductGroups);
+  final options = result
+      .map((row) {
+        final paramValue = row['ParamValue']?.toString().trim() ?? '';
+        final paramDesc = row['ParamDesc1']?.toString().trim() ?? '';
 
-    //return _mapOptions(result, 'ParamValue', 'ParamDesc1', addAll: true);
+        return FilterOption(
+          code: paramValue,
+          description: paramDesc,
+        );
+      })
+      .where((option) =>
+          option.code.isNotEmpty && option.description.isNotEmpty)
+      .toList();
 
-    final options = result.map((row) {
-      final paramValue = CommonUtil.decryptIfNotEmpty(
-        row['ParamValue']?.toString() ?? '',
-      );
+  return [
+    const FilterOption(code: 'All', description: 'All'),
+    ...options,
+  ];
+}
+  // Future<List<FilterOption>> getProductSubCategories({
+  //   required List<String> productGroups,
+  // }) async {
+  //   if (productGroups.isEmpty) return [];
 
-      final paramDesc = CommonUtil.decryptIfNotEmpty(
-        row['ParamDesc1']?.toString() ?? '',
-      );
+  //   // final db = await dbHelper.database;
+  //   final db = await OfflineDBHelper.getDatabase();
 
-      return FilterOption(code: paramValue, description: paramDesc);
-    }).toList();
+  //   //  String eproductGroups = CommonUtil.encryptIfNotEmpty(productGroups);
+  //   if (productGroups.isEmpty) return [];
 
-    return [const FilterOption(code: 'All', description: 'All'), ...options];
-  }
+  //   final groups = productGroups.where((e) => e != 'All').toList();
+
+  //   if (groups.isEmpty) {
+  //     return [];
+  //   }
+
+  //   final eProductGroups = groups;
+  //   // final eProductGroups = groups
+  //   //     .map((e) => CommonUtil.encryptIfNotEmpty(e))
+  //   //     .toList();
+
+  //   final result = await db.rawQuery('''
+  //     SELECT DISTINCT ParamValue, ParamDesc1, SortOrder
+  //     FROM Lookupsu
+  //     WHERE LookupCode IN (${_placeholders(eProductGroups.length)})
+  //     AND ${_valid('ParamValue')}
+  //     AND ${_valid('ParamDesc1')}
+  //     ORDER BY CAST(SortOrder AS INTEGER)
+  //     ''', eProductGroups);
+
+  //   //return _mapOptions(result, 'ParamValue', 'ParamDesc1', addAll: true);
+
+  //   final options = result.map((row) {
+  //     final paramValue = CommonUtil.decryptIfNotEmpty(
+  //       row['ParamValue']?.toString() ?? '',
+  //     );
+
+  //     final paramDesc = CommonUtil.decryptIfNotEmpty(
+  //       row['ParamDesc1']?.toString() ?? '',
+  //     );
+
+  //     return FilterOption(code: paramValue, description: paramDesc);
+  //   }).toList();
+
+  //   return [const FilterOption(code: 'All', description: 'All'), ...options];
+  // }
 
   Future<List<FilterOption>> getRenewalYearCounts() async {
     //final db = await dbHelper.database;
     final odb = await OfflineDBHelper.getDatabase();
+    // final result = await odb.rawQuery('''
+    //   SELECT DISTINCT ParamValue, ParamDesc1, SortOrder
+    //   FROM LookUpSU
+    //   WHERE LookUpCode = 'RenewalYear'
+    //   AND ${_valid('ParamValue')}
+    //   AND ${_valid('ParamDesc1')}
+    //   ORDER BY CAST(SortOrder AS INTEGER)
+    // ''');
     final result = await odb.rawQuery('''
-      SELECT DISTINCT ParamValue, ParamDesc1, SortOrder
-      FROM LookUpSU
-      WHERE LookUpCode = 'RenewalYear'
-      AND ${_valid('ParamValue')}
-      AND ${_valid('ParamDesc1')}
-      ORDER BY CAST(SortOrder AS INTEGER)
-    ''');
+  SELECT DISTINCT ParamValue, ParamDesc1, SortOrder
+  FROM Lookupsu
+  WHERE LookupCode = 'RenewalYear'
+  AND ${_valid('ParamValue')}
+  AND ${_valid('ParamDesc1')}
+  ORDER BY CAST(SortOrder AS INTEGER)
+''');
 
     return _mapOptions(result, 'ParamValue', 'ParamDesc1', addAll: true);
   }
@@ -649,5 +706,201 @@ class FilterRepository {
       FilterOption(code: 'N', description: 'No'),
       FilterOption(code: 'All', description: 'All'),
     ];
+  }
+
+  Future<Map<String, List<FilterOption>>> getAllLookupOptions() async {
+    final db = await OfflineDBHelper.getDatabase();
+
+    final tables = await db.rawQuery(
+      "SELECT name FROM sqlite_master WHERE type='table'",
+    );
+    print("ALL OFFLINE TABLES: $tables");
+
+    final lookupCount = await db.rawQuery(
+      "SELECT COUNT(*) as cnt FROM LookUpSU",
+    );
+    print("LookUpSU ROW COUNT: $lookupCount");
+
+    final lookupSample = await db.rawQuery("SELECT * FROM LookUpSU LIMIT 10");
+    print("LookUpSU SAMPLE: $lookupSample");
+    //   final result = await db.rawQuery('''
+    //   SELECT LookUpCode, ParamDesc1, SortOrder
+    //   FROM LookUpSU
+    //   WHERE LookUpCode IS NOT NULL
+    //   AND TRIM(LookUpCode) != ''
+    //   AND ParamDesc1 IS NOT NULL
+    //   AND TRIM(ParamDesc1) != ''
+    //   AND UPPER(TRIM(ParamDesc1)) != 'NA'
+    //   AND LOWER(TRIM(ParamDesc1)) != 'null'
+    //   ORDER BY LookUpCode, CAST(SortOrder AS INTEGER)
+    // ''');
+
+    final result = await db.rawQuery('''
+  SELECT LookupCode, ParamDesc1, SortOrder
+  FROM Lookupsu
+  WHERE LookupCode IS NOT NULL
+  AND TRIM(LookupCode) != ''
+  AND ParamDesc1 IS NOT NULL
+  AND TRIM(ParamDesc1) != ''
+  AND UPPER(TRIM(ParamDesc1)) != 'NA'
+  AND LOWER(TRIM(ParamDesc1)) != 'null'
+  ORDER BY LookupCode, CAST(SortOrder AS INTEGER)
+''');
+
+    final Map<String, List<FilterOption>> lookupCache = {};
+
+    for (final row in result) {
+      //final lookupCode = row['LookUpCode']?.toString().trim() ?? '';
+      final lookupCode = row['LookupCode']?.toString().trim() ?? '';
+      final value = row['ParamDesc1']?.toString().trim() ?? '';
+
+      if (lookupCode.isEmpty || value.isEmpty) continue;
+
+      lookupCache.putIfAbsent(lookupCode, () => []);
+
+      if (!lookupCache[lookupCode]!.any((e) => e.code == value)) {
+        lookupCache[lookupCode]!.add(
+          FilterOption(code: value, description: value),
+        );
+      }
+    }
+
+    print("LOOKUP CACHE LOADED KEYS: ${lookupCache.keys.toList()}");
+
+    return lookupCache;
+  }
+
+  Future<List<FilterOption>> getVehicleMakes() async {
+    final db = await OfflineDBHelper.getDatabase();
+
+    final result = await db.rawQuery('''
+    SELECT DISTINCT Make_ID_PK, Make_Name
+    FROM Make_Master
+    WHERE Make_Name IS NOT NULL
+    AND TRIM(Make_Name) != ''
+    AND UPPER(TRIM(Make_Name)) != 'NA'
+    AND LOWER(TRIM(Make_Name)) != 'null'
+    ORDER BY Make_Name ASC
+  ''');
+
+    final options = result
+        .map((row) {
+          final makeId = row['Make_ID_PK']?.toString().trim() ?? '';
+          final makeName = row['Make_Name']?.toString().trim() ?? '';
+
+          return FilterOption(code: makeId, description: makeName);
+        })
+        .where((e) => e.code.isNotEmpty && e.description.isNotEmpty)
+        .toList();
+
+    print("MAKE OPTIONS COUNT: ${options.length}");
+
+    return options;
+  }
+
+  // List<FilterOption> getCachedLookupOptions(
+  //   Map<String, List<FilterOption>> lookupCache,
+  //   String lookupCode,
+  // ) {
+  //   return lookupCache[lookupCode] ?? [];
+  // }
+  //change added by rahul
+  List<FilterOption> getCachedLookupOptions(
+    Map<String, List<FilterOption>> lookupCache,
+    String lookupCode,
+  ) {
+    final normalizedLookupCode = lookupCode.trim().toLowerCase();
+
+    for (final entry in lookupCache.entries) {
+      if (entry.key.trim().toLowerCase() == normalizedLookupCode) {
+        return entry.value;
+      }
+    }
+
+    print("LOOKUP NOT FOUND: [$lookupCode]");
+    print("AVAILABLE LOOKUP KEYS: ${lookupCache.keys.toList()}");
+
+    return [];
+  }
+
+  Map<String, List<FilterOption>> getDynamicProductDropdownsFromCache({
+    required String productGroup,
+    required Map<String, List<FilterOption>> lookupCache,
+    required List<FilterOption> makeOptions,
+  }) {
+    final group = productGroup.trim().toLowerCase();
+
+    print("DYNAMIC PRODUCT GROUP RECEIVED: [$productGroup]");
+    print("NORMALIZED PRODUCT GROUP: [$group]");
+
+    switch (group) {
+      case 'pvt':
+        return {
+          'nilDep': getCachedLookupOptions(lookupCache, 'NilDep'),
+          'category': getCachedLookupOptions(lookupCache, 'CustomerCategory'),
+          'fuelType': getCachedLookupOptions(lookupCache, 'FuelType'),
+          'make': makeOptions,
+          'vehicleAgeGroup': getCachedLookupOptions(
+            lookupCache,
+            'VehicleAgegrp',
+          ),
+        };
+
+      case '2w':
+        return {
+          'nilDep': getCachedLookupOptions(lookupCache, 'NilDep'),
+          'mopedType': getCachedLookupOptions(lookupCache, 'MopedType'),
+          'make': makeOptions,
+          'vehicleAgeGroup': getCachedLookupOptions(
+            lookupCache,
+            'VehicleAgegrp',
+          ),
+        };
+
+      case 'pcv':
+      case 'gcv':
+        return {
+          'nilDep': getCachedLookupOptions(lookupCache, 'NilDep'),
+          'gvw': getCachedLookupOptions(lookupCache, 'GVWMaster'),
+          'make': makeOptions,
+          'vehicleAgeGroup': getCachedLookupOptions(
+            lookupCache,
+            'VehicleAgegrp',
+          ),
+          'seatingCapacity': getCachedLookupOptions(lookupCache, 'Seating'),
+        };
+
+      case 'retail health':
+        return {
+          'ageGroup': getCachedLookupOptions(lookupCache, 'AgegrpHealth'),
+          'familySize': getCachedLookupOptions(lookupCache, 'FamilySize'),
+          'sumInsuredBand': getCachedLookupOptions(
+            lookupCache,
+            'SuminsuredBandHealth',
+          ),
+          'preExisting': getCachedLookupOptions(lookupCache, 'Preexiting'),
+        };
+
+      case 'commercial lines':
+        return {
+          'occupancy': getCachedLookupOptions(lookupCache, 'Occupancy'),
+          'sumInsured': getCachedLookupOptions(
+            lookupCache,
+            'SICommerciallines',
+          ),
+        };
+
+      case 'gmc/gpa':
+        return {'lifeGroup': getCachedLookupOptions(lookupCache, 'LifeGrp')};
+
+      case 'others':
+        return {
+          'sumInsuredBand': getCachedLookupOptions(lookupCache, 'SIothers'),
+        };
+
+      default:
+        print("NO DYNAMIC DROPDOWN MATCH FOUND FOR PRODUCT GROUP: [$group]");
+        return {};
+    }
   }
 }

@@ -894,7 +894,7 @@ class _LeadUpdateState extends State<LeadUpdateNew> {
         builder: (context) => CommonSinglePopup(
           title: "Activity Disposition",
           message:
-              "Activity Disposition of lead number $leadId for lead open is updated for $acdes successfully",
+              "Activity Disposition of lead number $leadId for lead open is updated for  successfully",  //$acdes
           onOk: () {
             Navigator.pop(context);
           },

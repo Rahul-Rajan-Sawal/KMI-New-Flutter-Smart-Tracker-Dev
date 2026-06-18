@@ -325,7 +325,7 @@ class ScheduleRepository {
     try {
       final response = await GetAllAssignedLeads(
         sapCode: StaticVariables.mSAPCode,
-        CurMonth: "01-05-2026",
+        CurMonth: "01-06-2026",
         lastSyncDate: "",
       );
 
