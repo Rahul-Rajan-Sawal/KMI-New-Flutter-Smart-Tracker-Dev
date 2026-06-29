@@ -217,7 +217,7 @@ class DbTables {
     DROP TABLE IF EXISTS CalendarData_Mob
   ''';
 
-  static const ceadDetails = '''
+  static const LeadDetails = '''
 CREATE TABLE IF NOT EXISTS LeadDetails(
     RecId integer primary key autoincrement,
     SrvcReqDtlCode varchar,
@@ -259,6 +259,7 @@ CREATE TABLE IF NOT EXISTS LeadDetails(
     Remark varchar,
     ProposalNo varchar,
     PolicyNo varchar,
+    SumInsured varchar,
     PolicyStatus varchar,
     PolicyStartDate varchar,
     PolicyEndDate varchar,

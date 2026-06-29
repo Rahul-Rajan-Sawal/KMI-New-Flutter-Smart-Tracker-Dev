@@ -679,4 +679,19 @@ class ApiRequestBuilder {
       "TokenId": tokenId,
     };
   }
+  static Map<String,dynamic> GetLeadDataForUser({
+    required String UserId,
+    required String CurMonth,
+    required String CallerId,
+    required String CallerPass,
+    required String TokenId,
+  }){
+    return{
+      "UserId":UserId,
+      "CurMonth":CurMonth,
+      "CallerId":CallerId,
+      "CallerPass":CallerPass,
+      "TokenId":TokenId,
+    };
+  }
 }
