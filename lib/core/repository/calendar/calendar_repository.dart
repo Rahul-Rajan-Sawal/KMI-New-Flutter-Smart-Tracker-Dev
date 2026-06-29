@@ -7,57 +7,65 @@ import 'package:flutter_bottom_nav/models/calendardaycount.dart';
 class CalendarRepository {
   final dbHelper = DatabaseHelper.instance;
 
-  // 1️⃣ MAIN ENTRY POINT (USED BY PROVIDER)
-  //
-  // FLOW:
-  // 1. Check DB for selected month
-  // 2. If data exists → return directly (NO API)
-  // 3. If empty → call API → save → return DB data
-  //
+  // MAIN ENTRY POINT (USED BY PROVIDER)
+
+  // FLOW
+  // Check DB for selected month
+  // If data exists → return directly (NO API)
+  // If empty → call API → save → return DB data
+
   Future<List<CalendarDayCount>> getCalendarData({
     required DateTime monthStartDate,
     required CalendarFilterState filters,
     bool forceRefresh = false,
   }) async {
-    // STEP 1: Try loading from DB first (FAST PATH)
+    //  Try loading from DB first (FAST PATH)
     final dbData = await _getFromDB(monthStartDate, filters);
 
-    // ✔ If DB already has data → return immediately
+    // If DB already has data return immediately
     // if (dbData.isNotEmpty) {
     //   return dbData;
     // }
 
+    print("========== FILTERS RECEIVED ==========");
+    print("Zone: ${filters.zone}");
+    print("Region: ${filters.region}");
+    print("Branch: ${filters.branch}");
+    print("Agent: ${filters.agent}");
+    print("LeadType: ${filters.leadType}");
+    print("======================================");
+
     if (!forceRefresh && dbData.isNotEmpty) {
-      
       return dbData;
     }
 
-    // STEP 2: If DB is empty → fetch from API
-    await _syncFromApi(monthStartDate);
+    // If DB is empty  fetch from API
+    await _syncFromApi(monthStartDate, filters);
 
-    // STEP 3: After saving → read again from DB
+    // After saving  read again from DB
     return await _getFromDB(monthStartDate, filters);
   }
 
-  Future<void> _syncFromApi(DateTime month) async {
+  Future<void> _syncFromApi(DateTime month, CalendarFilterState filters) async {
     final db = await dbHelper.database;
 
     // Format month: 2026-05-01
     final curMonth =
         "${month.year}-${month.month.toString().padLeft(2, '0')}-01";
 
-    // 🔵 CALL API
+    // calendar CALL API
     final apiData = await AsyncGetCalendardata().getCalendarData(
       SAPCode: StaticVariables.mSAPCode,
       curMonth: curMonth,
     );
 
-    // =====================================================
-    // DELETE OLD MONTH DATA (ANDROID STYLE BEHAVIOR)
+    if (apiData.isEmpty) {
+      print("No calendar data received for $curMonth");
+      return;
+    }
+    // DELETE OLD MONTH DATA
+    // We remove only selected month other months stay
 
-    // IMPORTANT:
-    // We remove only that month so other months stay safe
-    //
     await db.delete(
       "CalendarData_Mob",
       where: "mdate LIKE ?",
@@ -75,6 +83,7 @@ class CalendarRepository {
         "UserId": item.userId,
         "AgentCode": item.agentCode,
         "AgentName": item.agentName,
+        //"date": item.date,
         "date": item.date,
         "TotalLeads": item.totalLeads,
         "WIPLeads": item.wipLeads,
@@ -85,7 +94,8 @@ class CalendarRepository {
         "SMName": item.smName,
         "SMBranchName": item.smBranchName,
         "LeadType": item.leadType,
-        "mdate": item.mdate,
+        //"mdate": item.mdate,
+        "mdate": curMonth,
         "SyncStatus": "1",
       });
     }
@@ -141,6 +151,32 @@ class CalendarRepository {
       // CONTACT selected
       whereClause += " AND LeadType = ?";
       whereArgs.add('L');
+    }
+
+    //filters
+    //zone
+    if (filters.zone.isNotEmpty) {
+      whereClause +=
+          " AND Zone IN (${List.filled(filters.zone.length, '?').join(',')})";
+      whereArgs.addAll(filters.zone);
+    }
+    //Reigon
+    if (filters.region.isNotEmpty) {
+      whereClause +=
+          " AND Region IN (${List.filled(filters.region.length, '?').join(',')})";
+      whereArgs.addAll(filters.region);
+    }
+    //Branch
+    if (filters.branch.isNotEmpty) {
+      whereClause +=
+          " AND SMBranchName IN (${List.filled(filters.branch.length, '?').join(',')})";
+      whereArgs.addAll(filters.branch);
+    }
+    //agent
+    if (filters.agent.isNotEmpty) {
+      whereClause +=
+          " AND AgentCode IN (${List.filled(filters.agent.length, '?').join(',')})";
+      whereArgs.addAll(filters.agent);
     }
 
     // FINAL QUERY
@@ -206,13 +242,16 @@ class CalendarRepository {
     return grouped.values.toList();
   }
 
-  // 4️⃣ REFRESH FUNCTION (CALLED FROM UI BUTTON)
+  //  REFRESH FUNCTION (CALLED FROM UI BUTTON)
   // FLOW:
   // 1. Delete selected month data
   // 2. Call API
   // 3. Save fresh data
   //
-  Future<void> refreshCalendarData(DateTime month) async {
-    await _syncFromApi(month);
+  Future<void> refreshCalendarData(
+    DateTime month,
+    CalendarFilterState filters,
+  ) async {
+    await _syncFromApi(month, filters);
   }
 }

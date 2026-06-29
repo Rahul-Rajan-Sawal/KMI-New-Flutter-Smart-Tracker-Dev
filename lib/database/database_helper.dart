@@ -35,7 +35,7 @@ class DatabaseHelper {
     await db.execute(DbTables.createUserTable);
     try {
       print("Tables creation initiated");
-      await db.execute(DbTables.ceadDetails);
+      await db.execute(DbTables.LeadDetails);
       await db.execute(DbTables.createTbl_DashboardData_Mob);
       await db.execute(DbTables.createTbl_TeamDashboardData_Mob);
       await db.execute(DbTables.CreateTbl_CBFrmMSTLOB);
@@ -76,7 +76,7 @@ class DatabaseHelper {
         await txn.execute(DbTables.dropLMSLeadActivityTracker);
 
         // 2. Recreate tables
-        await txn.execute(DbTables.ceadDetails); // LeadDetails
+        await txn.execute(DbTables.LeadDetails); // LeadDetails
         await txn.execute(DbTables.lmsLeadActivityTracker);
       });
 

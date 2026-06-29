@@ -81,24 +81,27 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
 
       if (result.isNotEmpty) {
         print("Data available in DB → Fetch from table");
-        // _prepareTeamDashboard(); // we will write later
+        //_prepareTeamDashboard(); // we will write later
       } else {
         print("No data → Call API");
-        // _callDashboardData(false); // we will write later
+        _callDashboardData(false); // we will write later
       }
     } else if (dashboardType.toLowerCase() == "self" && !isFilter) {
-      // _callDashboardData(false);
+      _callDashboardData(false);
     } else {
       isDashboardListFilter = false;
     }
   }
 
   Future<void> _callDashboardData(bool isFromFilter) async {
+    final now = DateTime.now();
+    final month = "${now.year}-${now.month.toString().padLeft(2, '0')}-01";
+
     await ref
         .read(dashboardProvider.notifier)
         .loadDashboard(
-          rmCode: "70782643", // replace with actual login SAP code
-          month: "2026-03-01", // current month
+          rmCode: StaticVariables.mSAPCode, // replace with actual login SAP code
+          month: month, // current month
         );
   }
 
@@ -199,26 +202,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
   @override
   Widget build(BuildContext context) {
     final filterState = ref.watch(filterProvider);
-    // final dashboardState = ref.watch(dashboardProvider);
+    final dashboardState = ref.watch(dashboardProvider);
 
-    final dashboardState =  AsyncData(
-      DashboardSummary(
-        totalLeads: 0,
-        totalGwp: 0,
-        convertedCount: 0,
-        convertedAmount: 0,
-        //convertedPercentage: 0,
-        lostCount: 0,
-        lostAmount: 0,
-        //lostPercentage: 0,
-        openCount: 0,
-        openAmount: 0,
-        //openPercentage: 0,
-        salesCloseCount: 0,
-        salesCloseAmount: 0,
-        //salesClosedPercentage: 0,
-      ),
-    );
     print("==== DASHBOARD FILTER CHECK ====");
 
     print("Period: ${filterState.period}");
