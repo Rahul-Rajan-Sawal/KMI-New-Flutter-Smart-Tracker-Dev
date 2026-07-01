@@ -3,8 +3,12 @@ import 'package:flutter_bottom_nav/Activities/lead_update_activity.dart';
 import 'package:flutter_bottom_nav/Activities/lead_update_newactivity.dart';
 import 'package:flutter_bottom_nav/Activities/upcoming_activity_row.dart';
 import 'package:flutter_bottom_nav/Activities/view_details.dart';
+import 'package:flutter_bottom_nav/common/common_singltbtn_popup.dart';
+import 'package:flutter_bottom_nav/common/common_util.dart';
 import 'package:flutter_bottom_nav/core/apicall/async_get_single_lead_details.dart';
+import 'package:flutter_bottom_nav/core/apicall/async_search_customer_contact.dart';
 import 'package:flutter_bottom_nav/core/repository/schedules/schedule_repository.dart';
+import 'package:flutter_bottom_nav/core/repository/view_details_repository.dart';
 import 'package:flutter_bottom_nav/core/static_variables.dart';
 import 'package:flutter_bottom_nav/database/database_helper.dart';
 import 'package:flutter_bottom_nav/database/offline_DB_helper.dart';
@@ -33,10 +37,274 @@ class _UpcomingEventActivity extends State<UpcomingEventActivity> {
   List<String> productCodeList = [];
   String selectedProductCode = "";
   final ScheduleRepository repository = ScheduleRepository();
+  final ViewDetailsRepository callRepository = ViewDetailsRepository();
+
+  String bridgeCallToTime = "";
+  String bridgeCallFromTime = "";
+  String bridgeCallDownTime = "";
+
+  bool _isCallInProgress = false;
+
+  Future<void> loadBridgeCallTime() async {
+    final data = await callRepository.getBridgeCallTimes(
+      StaticVariables.mSAPCode,
+    );
+
+    if (!mounted) return;
+
+    if (data != null) {
+      setState(() {
+        bridgeCallToTime = data["BridgeCallToTime"] ?? "";
+        bridgeCallFromTime = data["BridgeCallFromTime"] ?? "";
+        bridgeCallDownTime = data["BridgeCallDownTime"] ?? "";
+      });
+
+      debugPrint(
+        "Bridge Call Time: "
+        "$bridgeCallFromTime to $bridgeCallToTime, "
+        "downtime: $bridgeCallDownTime",
+      );
+    }
+  }
+
+  bool isWithinWorkingHours(int fromHour, int toHour) {
+    final now = DateTime.now();
+
+    final currentMinutes = now.hour * 60 + now.minute;
+    final startMinutes = fromHour * 60;
+    final endMinutes = toHour * 60;
+
+    if (startMinutes <= endMinutes) {
+      return currentMinutes >= startMinutes && currentMinutes <= endMinutes;
+    }
+
+    // Supports a time range that crosses midnight.
+    return currentMinutes >= startMinutes || currentMinutes <= endMinutes;
+  }
+
+  Future<void> handleLeadCall(Map<String, dynamic> item) async {
+    if (_isCallInProgress) return;
+
+    final String leadId = item["SrvcReqDtlCode"]?.toString().trim() ?? "";
+
+    final String policyNumber = item["PolicyNo"]?.toString().trim() ?? "";
+
+    final String customerName = item["Name"]?.toString().trim() ?? "";
+
+    if (leadId.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Lead ID not available")));
+      return;
+    }
+
+    _isCallInProgress = true;
+    bool loaderVisible = false;
+
+    try {
+      // Working-hours validation.
+      final int? fromHour = int.tryParse(bridgeCallFromTime);
+      final int? toHour = int.tryParse(bridgeCallToTime);
+
+      if (fromHour != null && toHour != null) {
+        final bool isWithinTime = isWithinWorkingHours(fromHour, toHour);
+
+        if (!isWithinTime) {
+          if (!mounted) return;
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                "Calling is allowed only between "
+                "$fromHour:00 and $toHour:00",
+              ),
+            ),
+          );
+
+          return;
+        }
+      }
+
+      // Check whether another call can currently be initiated.
+      final bool canInitiateCall = await callRepository.isDownTime(
+        sapCode: StaticVariables.mSAPCode,
+        srvcReqDtlCode: leadId,
+      );
+
+      if (!mounted) return;
+
+      if (!canInitiateCall) {
+        await showDialog<void>(
+          context: context,
+          builder: (dialogContext) {
+            return CommonSinglePopup(
+              title: "Unable to make call",
+              message:
+                  "You cannot initiate a call within "
+                  "$bridgeCallDownTime minutes",
+              onOk: () {
+                Navigator.pop(dialogContext);
+              },
+            );
+          },
+        );
+
+        // Important: stop the call process.
+        return;
+      }
+
+      CommonUtil.show(
+        context,
+        message: "Searching For Customer Contact Please wait..",
+      );
+      loaderVisible = true;
+
+      // Fetch contacts and store them in the local database.
+      final result = await searchCustomerContact(
+        sapCode: StaticVariables.mSAPCode,
+        leadNo: leadId,
+        policyNo: policyNumber,
+      );
+
+      if (!mounted) return;
+
+      if (result["errorFlag"] != "success") {
+        if (loaderVisible) {
+          CommonUtil.hide(context);
+          loaderVisible = false;
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Unable to fetch customer contact details"),
+          ),
+        );
+
+        return;
+      }
+
+      // Read real mobile numbers saved by searchCustomerContact().
+      final List<String> numbers = await callRepository
+          .getCustomerMobileNumbers(leadId);
+
+      if (!mounted) return;
+
+      if (loaderVisible) {
+        CommonUtil.hide(context);
+        loaderVisible = false;
+      }
+
+      if (numbers.isEmpty) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text("Number Not Available")));
+
+        return;
+      }
+
+      if (numbers.length == 1) {
+        await CommonUtil.makeCall(
+          numbers.first,
+          leadId,
+          policyNumber,
+          customerName,
+        );
+
+        return;
+      }
+
+    await showCallNumberSelection(
+        numbers: numbers,
+        leadId: leadId,
+        uniqueNo: policyNumber,
+        customerName: customerName,
+      );
+    } catch (e, stackTrace) {
+      debugPrint("Lead call error: $e");
+      debugPrintStack(stackTrace: stackTrace);
+
+      if (mounted && loaderVisible) {
+        CommonUtil.hide(context);
+        loaderVisible = false;
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Something went wrong while making the call"),
+          ),
+        );
+      }
+    } finally {
+      _isCallInProgress = false;
+    }
+  }
+
+  Future<void> showCallNumberSelection({
+    required List<String> numbers,
+    required String leadId,
+    required String uniqueNo,
+    required String customerName,
+  }) {
+  return showModalBottomSheet<void>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (bottomSheetContext) {
+        return SafeArea(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxHeight: 450),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(height: 12),
+
+                const Text(
+                  "Select Number",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+
+                const Divider(),
+
+                Flexible(
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: numbers.length,
+                    itemBuilder: (context, index) {
+                      final number = numbers[index];
+
+                      return ListTile(
+                        leading: const Icon(Icons.phone),
+                        title: Text(number),
+                        onTap: () async {
+                          Navigator.pop(bottomSheetContext);
+
+                          await CommonUtil.makeCall(
+                            number,
+                            leadId,
+                            uniqueNo,
+                            customerName,
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   final Map<String, String> _activityDescriptionCache = {};
   @override
   void initState() {
     super.initState();
+
+    loadBridgeCallTime();
 
     setScheduleDates();
     getLeadDetails().then((_) async {
@@ -1032,7 +1300,10 @@ class _UpcomingEventActivity extends State<UpcomingEventActivity> {
             }
           },
 
-          onCall: () async {},
+          //onCall: () async {},
+          onCall: () async {
+            await handleLeadCall(item);
+          },
 
           onEmail: () async {},
 
@@ -1246,8 +1517,9 @@ class _UpcomingEventActivity extends State<UpcomingEventActivity> {
             }
           },
 
-          onCall: () async {},
-
+          onCall: () async {
+            await handleLeadCall(item);
+          },
           onEmail: () async {},
 
           onMessage: () async {},

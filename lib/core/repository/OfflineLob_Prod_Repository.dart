@@ -56,10 +56,10 @@ static Future<Map<String, List<String>>> getProductList(String lobCode) async {
       return {"desc": [], "code": []};
     }
 
-    // 🔹 Step 2: Create placeholders (?, ?, ?)
+    // Step 2: Create placeholders (?, ?, ?)
     final placeholders = List.filled(prodCodes.length, '?').join(',');
 
-    // 🔹 Step 3: Fetch actual product details
+    // Step 3: Fetch actual product details
     final result = await db.rawQuery(
       "SELECT ProdDesc1, ProdCode FROM CBFrmMSTProduct WHERE ProdCode IN ($placeholders)",
       prodCodes,

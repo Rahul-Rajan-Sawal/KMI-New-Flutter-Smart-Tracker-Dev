@@ -4,9 +4,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 class CalendarFilterNotifier extends StateNotifier<CalendarFilterState> {
   CalendarFilterNotifier() : super(const CalendarFilterState());
 
-  /// Apply button → replace entire filter state
+  /// Apply button  replace entire filter state
   void setFilters(CalendarFilterState newFilters) {
+    print("SET FILTERS CALLED");
+    print(newFilters.zone);
+    print(newFilters.region);
+    print(newFilters.branch);
     state = newFilters;
+    print("PROVIDER STATE AFTER SET");
+    print(state.zone);
+    print(state.region);
+    print(state.branch);
   }
 
   /// Reset button → clear all filters
@@ -70,12 +78,11 @@ class CalendarFilterNotifier extends StateNotifier<CalendarFilterState> {
   }
 
   void setBranch(String value) {
-  state = state.copyWith(branch: [value]);
+    state = state.copyWith(branch: [value]);
+  }
 }
 
-}
-
-/// 🌍 Global provider accessible from entire app
+/// Global provider accessible from entire app
 final calendarFilterProvider =
     StateNotifierProvider<CalendarFilterNotifier, CalendarFilterState>(
       (ref) => CalendarFilterNotifier(),

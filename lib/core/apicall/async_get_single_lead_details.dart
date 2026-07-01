@@ -14,7 +14,7 @@ Future<Map<String, dynamic>> GetSingleLeadDetails({
       sapCode: sapCode,
       LeadID: LeadID,
       PolicyNo: PolicyNo,
-      tokenId: StaticVariables.TokenId,
+      tokenId: StaticVariables.TokenId, 
     );
 
     print("Printing $requestJson");

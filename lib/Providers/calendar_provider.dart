@@ -1,7 +1,7 @@
+import 'package:flutter_bottom_nav/Providers/calendar_filter_provider.dart';
 import 'package:flutter_bottom_nav/Providers/calendarrepositoryprovider.dart';
 import 'package:flutter_bottom_nav/Providers/calprovider.dart';
 import 'package:flutter_bottom_nav/models/calendardaycount.dart';
-import 'package:flutter_bottom_nav/providers/calendar_filter_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class CalendarNotifier
@@ -17,26 +17,49 @@ class CalendarNotifier
     loadData();
 
     // When radio filter changes db called
-    ref.listen(calendarFilterProvider, (previous, next) {
-       loadData();
-    });
 
-    // When month changes → call API again
-    ref.listen(currentMonthProvider, (previous, next) {
-      loadData();
+
+//commented by rahul one 25 June for filter state
+    // ref.listen(calendarFilterProvider, (previous, next) {
+    //   print("===== FILTER PROVIDER CHANGED =====");
+    //   print("PREV Zone: ${previous?.zone}");
+    //   print("NEXT Zone: ${next.zone}");
+    //   print("NEXT Region: ${next.region}");
+    //   print("NEXT Branch: ${next.branch}");
+    //   loadData(forceRefresh: false);
+    // });
+
+    // // When month changes → call API again
+    // ref.listen(currentMonthProvider, (previous, next) {
+    //   loadData();
+    // });
+
+    //changed by rahul for getting the data for month switching
+    ref.listen<DateTime>(currentMonthProvider, (previous, next) {
+      if (previous?.year != next.year || previous?.month != next.month) {
+        refresh();
+      }
     });
   }
 
-  Future<void> loadData() async {
+  Future<void> loadData({bool forceRefresh = false}) async {
     try {
       final filters = ref.read(calendarFilterProvider);
+
+      print("========== CALENDAR NOTIFIER ==========");
+      print("Zone: ${filters.zone}");
+      print("Region: ${filters.region}");
+      print("Branch: ${filters.branch}");
+      print("Agent: ${filters.agent}");
+      print("LeadType: ${filters.leadType}");
+      print("======================================");
       final monthStart = ref.read(currentMonthProvider);
       final repo = ref.read(calendarRepositoryProvider);
 
       final data = await repo.getCalendarData(
         monthStartDate: monthStart,
         filters: filters,
-        forceRefresh: false,
+        forceRefresh: forceRefresh,
       );
 
       state = AsyncValue.data(data);
@@ -49,6 +72,13 @@ class CalendarNotifier
   Future<void> refresh() async {
     try {
       final filters = ref.read(calendarFilterProvider);
+      print("========== REFRESH FILTERS ==========");
+      print("Zone: ${filters.zone}");
+      print("Region: ${filters.region}");
+      print("Branch: ${filters.branch}");
+      print("Agent: ${filters.agent}");
+      print("LeadType: ${filters.leadType}");
+      print("====================================");
       final monthStart = ref.read(currentMonthProvider);
       final repo = ref.read(calendarRepositoryProvider);
 

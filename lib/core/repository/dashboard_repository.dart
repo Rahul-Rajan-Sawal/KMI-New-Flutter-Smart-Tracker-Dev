@@ -10,27 +10,61 @@ class DashboardRepository {
 
   DashboardRepository(this.dbHelper);
 
-  /// Check if dashboard data exists in DB
-  Future<bool> isDataAvailable(String rmCode, String MothYear) async {
+  String _monthKey(String month) {
+    // Converts 2026-06-01 to 2026-06
+    if (month.length >= 7) {
+      return month.substring(0, 7);
+    }
+    return month;
+  }
+
+  Future<bool> isDataAvailable(String rmCode, String month) async {
     final db = await dbHelper.database;
+    final monthValue = _monthKey(month);
 
     final result = await db.query(
       "DashboardData_Mob",
-      where: "UserId=? and MothYear=?",
-      whereArgs: [rmCode, MothYear],
+      where: "UserId = ? AND MothYear = ?",
+      whereArgs: [rmCode, monthValue],
     );
 
     return result.isNotEmpty;
   }
 
+  /// Check if dashboard data exists in DB
+  // Future<bool> isDataAvailable(String rmCode, String MothYear) async {
+  //   final db = await dbHelper.database;
+
+  //   final result = await db.query(
+  //     "DashboardData_Mob",
+  //     where: "UserId=? and MothYear=?",
+  //     whereArgs: [rmCode, MothYear],
+  //   );
+
+  //   return result.isNotEmpty;
+  // }
+
   /// Fetch from DB
-  Future<List<Map<String, dynamic>>> getFromDb(String rmCode) async {
+  // Future<List<Map<String, dynamic>>> getFromDb(String rmCode) async {
+  //   final db = await dbHelper.database;
+
+  //   return await db.query(
+  //     "DashboardData_Mob",
+  //     where: "UserId = ?",
+  //     whereArgs: [rmCode],
+  //   );
+  // }
+  Future<List<Map<String, dynamic>>> getFromDb(
+    String rmCode,
+    String month,
+  ) async {
     final db = await dbHelper.database;
+    final monthValue = _monthKey(month);
 
     return await db.query(
       "DashboardData_Mob",
-      where: "UserId = ?",
-      whereArgs: [rmCode],
+      where: "UserId = ? AND MothYear = ?",
+      whereArgs: [rmCode, monthValue],
     );
   }
 
@@ -63,11 +97,19 @@ class DashboardRepository {
       final db = await dbHelper.database;
 
       await db.transaction((txn) async {
+        final monthValue = _monthKey(month);
+
         await txn.delete(
           "DashboardData_Mob",
-          where: "UserId = ?",
-          whereArgs: [StaticVariables.mSAPCode],
+          where: "UserId = ? AND MothYear = ?",
+          whereArgs: [userId, monthValue],
         );
+
+        // await txn.delete(
+        //   "DashboardData_Mob",
+        //   where: "UserId = ?",
+        //   whereArgs: [StaticVariables.mSAPCode],
+        // );
         final batch = txn.batch();
 
         for (var item in tableList) {
@@ -110,6 +152,7 @@ class DashboardRepository {
             "RNblockReason": item["RNblockReason"],
             "ProductGroup": item["ProductGroup"],
             "ProductSubCategory": item["ProductSubCategory"],
+            "NILDep": item["NILDep"],
             "Category": item["Category"],
             "FuelType": item["FuelType"],
             "VehicleType": item["VehicleType"],
@@ -135,7 +178,7 @@ class DashboardRepository {
             "CreateDTime": item["CreateDTime"],
             "UpdatedBy": item["UpdatedBy"],
             "UpdatedDtime": item["UpdatedDtime"],
-            "MothYear": item["MothYear"],
+            "MothYear": item["MothYear"] ?? monthValue,
             "SyncStatus": item["SyncStatus"],
           };
 
@@ -151,9 +194,9 @@ class DashboardRepository {
         await batch.commit(noResult: true);
 
         if (lastCreateDTime != null) {
-          await db.update(
+          await txn.update(
             "iUser",
-            {"DashboardUpdatedDate": lastCreateDTime},
+            {"DashboardUpdatedDate":EncryptionUtil.encrypt(lastCreateDTime!)},// lastCreateDTime},
             where: "UserId = ?",
             whereArgs: [
               EncryptionUtil.encrypt(StaticVariables.mSAPCode.toUpperCase()),
@@ -177,7 +220,7 @@ class DashboardRepository {
     final exists = await isDataAvailable(rmCode, month);
 
     if (exists) {
-      return await getFromDb(rmCode);
+      return await getFromDb(rmCode,month);
     } else {
       final success = await fetchAndStoreDashboard(
         userId: rmCode,
@@ -185,7 +228,7 @@ class DashboardRepository {
       );
 
       if (success) {
-        return await getFromDb(rmCode);
+        return await getFromDb(rmCode,month);
       } else {
         return [];
       }
@@ -195,10 +238,12 @@ class DashboardRepository {
   Future<DashboardSummary> calculateSummary(String rmCode, String month) async {
     final db = await dbHelper.database;
 
+    final monthValue = _monthKey(month);
+
     final rows = await db.query(
       "DashboardData_Mob",
       where: "UserId = ?  and MothYear=?",
-      whereArgs: [rmCode, "2026-03"],
+      whereArgs: [rmCode, monthValue],
     );
 
     int iConvertedCount = 0;
