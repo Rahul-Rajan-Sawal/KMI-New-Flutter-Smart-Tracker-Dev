@@ -650,8 +650,9 @@ class ApiRequestBuilder {
       "PolicyNo": PolicyNo,
       "CallerId": callerId,
       "CallerPass": callerPass,
-      };
-      }
+    };
+  }
+
   static Map<String, dynamic> GetDashboardParam({
     required String SAPCode,
     required String BranchCode,
@@ -679,6 +680,58 @@ class ApiRequestBuilder {
       "TokenId": tokenId,
     };
   }
+
+  static Map<String, dynamic> CreateLeadFromMob({
+    required String SAPCode,
+    required String reqChannelId,
+    required String leadSource,
+    required String leadSubSource,
+    required String businessType,
+    required String LOBCode,
+    required String prodCode,
+    required String saleType,
+    required String LeadQueue,
+    required String name,
+    required String mobileTel,
+    // required String Email,
+    required String addr1,
+    required String addr2,
+    required String addr3,
+    required String cityCode,
+    required String districtCode,
+    required String stateCode,
+    required String pinCode,
+    required String area,
+    required String TempSrvcReqDtlCode,
+    required String CallerId,
+    required String CallerPass,
+    required String TokenId,
+  }) {
+    return {
+      "UserId": SAPCode,
+      "ReqChannelId": reqChannelId,
+      "LeadSource": leadSource,
+      "LeadSubSource": leadSubSource,
+      "BusinessType": businessType,
+      "LOBCode": LOBCode,
+      "ProdCode": prodCode,
+      "SaleType": saleType,
+      "LeadQueue": LeadQueue,
+      "Name": name,
+      "MobileTel": mobileTel,
+      "Email": "",
+      "Addr1": addr1,
+      "Addr2": addr2,
+      "Addr3": addr3,
+      "CityCode": cityCode,
+      "DistrictCode": districtCode,
+      "StateCode": stateCode,
+      "PinCode": pinCode,
+      "Area": area,
+      "TempSrvcReqDtlCode": TempSrvcReqDtlCode,
+      "CallerId": CallerId,
+      "CallerPass": CallerPass,
+      "TokenId": TokenId,
   static Map<String,dynamic> GetLeadDataForUser({
     required String UserId,
     required String CurMonth,

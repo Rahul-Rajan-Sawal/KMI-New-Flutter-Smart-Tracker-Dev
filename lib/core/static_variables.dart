@@ -34,7 +34,8 @@ class StaticVariables {
       UpdateActivity = "UpdateActivity",
       GetCalendarData = "GetCalendarData",
       GetAllAssignedLeads = "GetAllAssignedLeads",
-      GetDashboardParam = "GetDashboardParam",
+      CreateLeadFromMob = "CreateLeadFromMob",
+      GetDashboardParam = "GetDashboardParam";
       GetLeadDataForUser = "GetLeadDataForUser";
 
   static const String BridgeCallDtls = "BridgeCallDtls";
