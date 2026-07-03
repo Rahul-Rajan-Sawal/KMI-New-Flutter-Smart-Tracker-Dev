@@ -860,6 +860,8 @@ ON LeadDetails(UserId, MothYear, Activity, SubActivity);
 
 CREATE INDEX IF NOT EXISTS idx_tracker_srvc 
 ON LMSLeadActivityTracker(SrvcReqDtlCode);
+''';
+
   static const String createMstReqChannel = '''
 CREATE TABLE IF NOT EXISTS MstReqChannel(
   RecID INTEGER,
