@@ -1865,6 +1865,22 @@ class _CreateLeadScreenState extends State<CreateLeadScreen>
     );
   }
 
+  Widget businessTab() {
+    return Column(
+      children: [
+        Expanded(
+          child: ListView(
+            children: const [
+              // Business fields
+            ],
+          ),
+        ),
+        bottomButtons(),
+      ],
+    );
+  }
+
+  Widget address() {
   Widget businessDetailsTab() {
     return Column(
       children: [

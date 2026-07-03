@@ -839,6 +839,27 @@ CREATE TABLE IF NOT EXISTS Make_Master(
 );
 ''';
 
+  static const createDashboardIndexes = '''
+CREATE INDEX IF NOT EXISTS idx_dashboard_user_month 
+ON DashboardData_Mob(UserId, MothYear);
+
+CREATE INDEX IF NOT EXISTS idx_dashboard_user_month_activity 
+ON DashboardData_Mob(UserId, MothYear, Activity, SubActivity);
+
+CREATE INDEX IF NOT EXISTS idx_dashboard_user_month_leadtype 
+ON DashboardData_Mob(UserId, MothYear, LeadType);
+
+CREATE INDEX IF NOT EXISTS idx_team_dashboard_rm_month 
+ON TeamDashboardData_Mob(RMCode, MonthYear);
+
+CREATE INDEX IF NOT EXISTS idx_lead_details_srvc 
+ON LeadDetails(SrvcReqDtlCode);
+
+CREATE INDEX IF NOT EXISTS idx_lead_details_user_month_activity 
+ON LeadDetails(UserId, MothYear, Activity, SubActivity);
+
+CREATE INDEX IF NOT EXISTS idx_tracker_srvc 
+ON LMSLeadActivityTracker(SrvcReqDtlCode);
   static const String createMstReqChannel = '''
 CREATE TABLE IF NOT EXISTS MstReqChannel(
   RecID INTEGER,
