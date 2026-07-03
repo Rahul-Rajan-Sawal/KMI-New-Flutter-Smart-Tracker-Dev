@@ -860,5 +860,24 @@ ON LeadDetails(UserId, MothYear, Activity, SubActivity);
 
 CREATE INDEX IF NOT EXISTS idx_tracker_srvc 
 ON LMSLeadActivityTracker(SrvcReqDtlCode);
+  static const String createMstReqChannel = '''
+CREATE TABLE IF NOT EXISTS MstReqChannel(
+  RecID INTEGER,
+  ReqChannelId TEXT PRIMARY KEY,
+  ReqChannelId1 VARCHAR,
+  ReqChannelDesc VARCHAR,
+  ReqChannelDesc1 VARCHAR,
+  ReqChannelOtherID VARCHAR,
+  IsVisible VARCHAR,
+  IsActive VARCHAR,
+  VID VARCHAR,
+  CreateBy VARCHAR,
+  CreateDtim VARCHAR,
+  UpdateBy VARCHAR,
+  UpdateDtim vARCHAR,
+  CeaseDate VARCHAR
+);''';
+  static const dropMstReqChannel = '''
+DROP TABLE IF EXISTS MstReqChannel
 ''';
 }

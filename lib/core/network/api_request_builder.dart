@@ -698,24 +698,28 @@ class ApiRequestBuilder {
   }
 
   static Map<String, dynamic> getDataForDashboard({
-    required String UserId,
-    required String CurMonth,
-    required String ActivityCode,
-    required String SubActivityCode,
-    required String Status,
-    required String CallerId,
-    required String CallerPass,
-    required String TokenId,
-  }) {
-    return {
-      "UserId": UserId,
-      "ActivityCode": ActivityCode,
-      "SubActivityCode": SubActivityCode,
-      "CurMonth": CurMonth,
-      "Status": Status,
+      "UserId": SAPCode,
+      "ReqChannelId": reqChannelId,
+      "LeadSource": leadSource,
+      "LeadSubSource": leadSubSource,
+      "BusinessType": businessType,
+      "LOBCode": LOBCode,
+      "ProdCode": prodCode,
+      "SaleType": saleType,
+      "LeadQueue": LeadQueue,
+      "Name": name,
+      "MobileTel": mobileTel,
+      "Email": "",
+      "Addr1": addr1,
+      "Addr2": addr2,
+      "Addr3": addr3,
+      "CityCode": cityCode,
+      "DistrictCode": districtCode,
+      "StateCode": stateCode,
+      "PinCode": pinCode,
+      "Area": area,
+      "TempSrvcReqDtlCode": TempSrvcReqDtlCode,
       "CallerId": CallerId,
       "CallerPass": CallerPass,
       "TokenId": TokenId,
-    };
   }
-}
