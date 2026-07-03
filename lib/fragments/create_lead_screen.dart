@@ -128,14 +128,20 @@ class _CreateLeadScreenState extends State<CreateLeadScreen>
             ],
           ),
         ),
+
+        // body: TabBarView(
+        //   controller: _tabController,
+        //   children: [
+        //     // LeadSourceTab(),
+        //     // ProfileTab(),
+        //     // AddressTab(),
+        //     // BusinessTab(),
+        //   ],
+        // ),
         body: TabBarView(
           controller: _tabController,
-          children: [
-            // LeadSourceTab(),
-            // ProfileTab(),
-            // AddressTab(),
-            // BusinessTab(),
-          ],
+          physics: const NeverScrollableScrollPhysics(),
+          children: [leadSourceTab(), profileTab(), address(), businessTab()],
         ),
       ),
     );
@@ -193,6 +199,21 @@ class _CreateLeadScreenState extends State<CreateLeadScreen>
           child: ListView(
             children: [
               //profile fields
+            ],
+          ),
+        ),
+        bottomButtons(),
+      ],
+    );
+  }
+
+  Widget businessTab() {
+    return Column(
+      children: [
+        Expanded(
+          child: ListView(
+            children: const [
+              // Business fields
             ],
           ),
         ),

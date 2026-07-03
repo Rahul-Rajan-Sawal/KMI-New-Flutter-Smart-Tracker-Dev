@@ -49,6 +49,7 @@ class DatabaseHelper {
       await db.execute(DbTables.createTbl_Reference);
       await db.execute(DbTables.createTbl_LookUpSU);
       await db.execute(DbTables.createTbl_Make_Master);
+      await db.execute(DbTables.createDashboardIndexes);
       print("Table Created TBL_AGENT_CNT_DTLS");
       print(
         "**********************Tables Created---------------------------@@",
@@ -103,6 +104,7 @@ class DatabaseHelper {
     await db.execute(DbTables.dropTbl_Reference);
     await db.execute(DbTables.dropTbl_LookUpSU);
     await db.execute(DbTables.dropTbl_Make_Master);
+    await db.execute(DbTables.createDashboardIndexes);
     await _onCreate(db, newVersion);
   }
 

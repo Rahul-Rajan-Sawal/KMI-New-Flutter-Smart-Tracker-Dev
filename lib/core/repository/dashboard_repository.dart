@@ -1,8 +1,11 @@
+import 'package:flutter_bottom_nav/common/common_util.dart';
 import 'package:flutter_bottom_nav/common/encryption_util.dart';
 import 'package:flutter_bottom_nav/core/apicall/get_dashbaord_data.dart';
+import 'package:flutter_bottom_nav/core/apicall/getdata_fordashboard.dart';
 import 'package:flutter_bottom_nav/core/static_variables.dart';
 import 'package:flutter_bottom_nav/database/database_helper.dart';
-import 'package:flutter_bottom_nav/models/dashboard_summary_model.dart';
+import 'package:flutter_bottom_nav/models/Dashboard/dashboard_detail_model.dart';
+import 'package:flutter_bottom_nav/models/Dashboard/dashboard_summary_model.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
 
 class DashboardRepository {
@@ -15,6 +18,17 @@ class DashboardRepository {
     if (month.length >= 7) {
       return month.substring(0, 7);
     }
+    return month;
+  }
+
+  String _dashboardDetailApiMonth(String month) {
+    // converts 2026-07-01 to 01-07-2026 for GetDataForDashboard
+    final parts = month.split("-");
+
+    if (parts.length == 3 && parts[0].length == 4) {
+      return "${parts[2]}-${parts[1]}-${parts[0]}";
+    }
+
     return month;
   }
 
@@ -196,7 +210,9 @@ class DashboardRepository {
         if (lastCreateDTime != null) {
           await txn.update(
             "iUser",
-            {"DashboardUpdatedDate":EncryptionUtil.encrypt(lastCreateDTime!)},// lastCreateDTime},
+            {
+              "DashboardUpdatedDate": EncryptionUtil.encrypt(lastCreateDTime!),
+            }, // lastCreateDTime},
             where: "UserId = ?",
             whereArgs: [
               EncryptionUtil.encrypt(StaticVariables.mSAPCode.toUpperCase()),
@@ -213,29 +229,55 @@ class DashboardRepository {
   }
 
   /// Full Logic (DB First → API if empty)
+  // Future<List<Map<String, dynamic>>> loadDashboard({
+  //   required String rmCode,
+  //   required String month,
+  // }) async {
+  //   final exists = await isDataAvailable(rmCode, month);
+
+  //   if (exists) {
+  //     return await getFromDb(rmCode,month);
+  //   } else {
+  //     final success = await fetchAndStoreDashboard(
+  //       userId: rmCode,
+  //       month: month,
+  //     );
+
+  //     if (success) {
+  //       return await getFromDb(rmCode,month);
+  //     } else {
+  //       return [];
+  //     }
+  //   }
+  // }
+
+  //changed method added by Rahul on 30June2026
+
   Future<List<Map<String, dynamic>>> loadDashboard({
     required String rmCode,
     required String month,
+    bool forceRefresh = false,
   }) async {
     final exists = await isDataAvailable(rmCode, month);
 
-    if (exists) {
-      return await getFromDb(rmCode,month);
-    } else {
-      final success = await fetchAndStoreDashboard(
-        userId: rmCode,
-        month: month,
-      );
-
-      if (success) {
-        return await getFromDb(rmCode,month);
-      } else {
-        return [];
-      }
+    if (exists && !forceRefresh) {
+      return await getFromDb(rmCode, month);
     }
+
+    final success = await fetchAndStoreDashboard(userId: rmCode, month: month);
+
+    if (success) {
+      return await getFromDb(rmCode, month);
+    }
+
+    return [];
   }
 
-  Future<DashboardSummary> calculateSummary(String rmCode, String month) async {
+  Future<DashboardSummary> calculateSummary(
+    String rmCode,
+    String month, {
+    int leadType = 1,
+  }) async {
     final db = await dbHelper.database;
 
     final monthValue = _monthKey(month);
@@ -261,15 +303,59 @@ class DashboardRepository {
     int totalLeads = 0;
     double totalGwp = 0;
 
+    int lostToCompetitionCount = 0;
+    int notRespondingCount = 0;
+    int notInterestedCount = 0;
+
+    int parkedCount = 0;
+    int followUpCount = 0;
+
+    int premiumCollectedCount = 0;
+    int policyIssuedCount = 0;
+
     for (var row in rows) {
       String sActivity = row["Activity"]?.toString() ?? "";
       String sSubActivity = row["SubActivity"]?.toString() ?? "";
+
+      final rowLeadType = (row["LeadType"] ?? "")
+          .toString()
+          .trim()
+          .toUpperCase();
+
+      // Contact selected: Android logic = LeadType != "L"
+      if (leadType == 2 && rowLeadType == "L") {
+        continue;
+      }
+
+      // Lead selected: Android logic = LeadType == "L"
+      if (leadType == 3 && rowLeadType != "L") {
+        continue;
+      }
 
       int leadConverted =
           int.tryParse(row["LeadConverted"]?.toString() ?? "0") ?? 0;
       int leadLost = int.tryParse(row["LeadLost"]?.toString() ?? "0") ?? 0;
       int wipLeads = int.tryParse(row["WIPLeads"]?.toString() ?? "0") ?? 0;
       double amount = double.tryParse(row["Amount"]?.toString() ?? "0") ?? 0;
+
+      lostToCompetitionCount +=
+          int.tryParse(row["Lost_To_Competition"]?.toString() ?? "0") ?? 0;
+
+      notRespondingCount +=
+          int.tryParse(row["Customer_Not_Responding"]?.toString() ?? "0") ?? 0;
+
+      notInterestedCount +=
+          int.tryParse(row["Customer_Not_Interested"]?.toString() ?? "0") ?? 0;
+
+      parkedCount += int.tryParse(row["ParkLead"]?.toString() ?? "0") ?? 0;
+
+      followUpCount += int.tryParse(row["FollowUp"]?.toString() ?? "0") ?? 0;
+
+      premiumCollectedCount +=
+          int.tryParse(row["Premium_Collected"]?.toString() ?? "0") ?? 0;
+
+      policyIssuedCount +=
+          int.tryParse(row["Policy_Issued"]?.toString() ?? "0") ?? 0;
 
       totalLeads += leadConverted + leadLost + wipLeads;
 
@@ -322,6 +408,233 @@ class DashboardRepository {
       openAmount: iOpenRS,
       salesCloseCount: iSalesCloseCount,
       salesCloseAmount: iSalesCloseRS,
+      lostToCompetitionCount: lostToCompetitionCount,
+      notRespondingCount: notRespondingCount,
+      notInterestedCount: notInterestedCount,
+      parkedCount: parkedCount,
+      followUpCount: followUpCount,
+      premiumCollectedCount: premiumCollectedCount,
+      policyIssuedCount: policyIssuedCount,
     );
+  }
+
+  Future<List<DashboardDetailModel>> getDashboardDetailsFromDb({
+    required String rmCode,
+    required String month,
+    required String status,
+    int leadType = 1,
+  }) async {
+    final db = await dbHelper.database;
+    final monthValue = _monthKey(month);
+
+    final whereParts = <String>["UserId = ?", "MothYear = ?"];
+
+    final whereArgs = <Object?>[rmCode, monthValue];
+
+    // 1 = All
+    // 2 = Contact => LeadType != L
+    // 3 = Lead => LeadType == L
+    if (leadType == 2) {
+      whereParts.add("(LeadType IS NULL OR UPPER(TRIM(LeadType)) != ?)");
+      whereArgs.add("L");
+    } else if (leadType == 3) {
+      whereParts.add("UPPER(TRIM(LeadType)) = ?");
+      whereArgs.add("L");
+    }
+
+    final normalizedStatus = status.trim().toLowerCase();
+
+    if (normalizedStatus == "converted") {
+      whereParts.add("Activity IN (?, ?, ?, ?)");
+      whereArgs.addAll(["04", "4", "17", "35"]);
+    } else if (normalizedStatus == "lost") {
+      whereParts.add("Activity IN (?, ?, ?, ?, ?)");
+      whereArgs.addAll(["05", "5", "24", "29", "38"]);
+    } else if (normalizedStatus == "sale closed") {
+      whereParts.add("Activity = ?");
+      whereArgs.add("36");
+    } else if (normalizedStatus == "open") {
+      whereParts.add("Activity NOT IN (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+      whereArgs.addAll([
+        "04",
+        "4",
+        "05",
+        "5",
+        "17",
+        "24",
+        "29",
+        "35",
+        "36",
+        "38",
+      ]);
+    }
+
+    final rows = await db.query(
+      "LeadDetails",
+      where: whereParts.join(" AND "),
+      whereArgs: whereArgs,
+      orderBy: "RecId DESC",
+    );
+
+    return rows.map((row) => DashboardDetailModel.fromDb(row)).toList();
+  }
+
+  //dashboard lost lead saving for grid data
+  Future<bool> savegriddashboarddata({
+    required String rmCode,
+    required String month,
+    required String activityCode,
+    required String subActivityCode,
+    required String statusFlag,
+  }) async {
+    try {
+      final response = await GetDataForDashboard.getDataForDashboard(
+        UserId: rmCode,
+        CurMonth: _dashboardDetailApiMonth(month),
+        //CurMonth: month,
+        ActivityCode: activityCode,
+        SubActivityCode: subActivityCode,
+        Status: statusFlag,
+      );
+
+      final table = response["Table"];
+
+      if (table == null || table is! List || table.isEmpty) {
+        print("GetDataForDashboard Table empty");
+        return false;
+      }
+
+      final db = await dbHelper.database;
+      final batch = db.batch();
+
+      final monthValue = month.length >= 7 ? month.substring(0, 7) : month;
+
+      String encryptValue(dynamic value) {
+        return CommonUtil.encryptIfNotEmpty(value?.toString() ?? "");
+      }
+
+      for (final row in table) {
+        if (row is! Map) continue;
+
+        final item = Map<String, dynamic>.from(row);
+
+        final srvcReqDtlCode = item["SrvcReqDtlCode"]?.toString() ?? "";
+
+        if (srvcReqDtlCode.trim().isEmpty) {
+          continue;
+        }
+
+        final leadMap = <String, dynamic>{
+          // Keep these plain because they are used in query/filter/navigation
+          "SrvcReqDtlCode": srvcReqDtlCode,
+          "UserId":
+              item["UserId"]?.toString().toUpperCase() ?? rmCode.toUpperCase(),
+          "SMCode": item["SMCode"]?.toString() ?? rmCode,
+          "MothYear": item["MothYear"]?.toString().isNotEmpty == true
+              ? item["MothYear"].toString()
+              : monthValue,
+          "Activity": item["ActivityCode"]?.toString().isNotEmpty == true
+              ? item["ActivityCode"].toString()
+              : activityCode,
+          "SubActivity": item["SubActivityCode"]?.toString().isNotEmpty == true
+              ? item["SubActivityCode"].toString()
+              : subActivityCode,
+          "LeadType": item["LeadType"]?.toString() ?? "",
+
+          // Dashboard grid fields
+          "PolicyNo": encryptValue(item["PolicyNo"]),
+          "ProdName": encryptValue(item["ProdName"]),
+          "leadAmt": encryptValue(item["leadAmt"]),
+          "Amount": encryptValue(item["Amount"]),
+          "Name": encryptValue(item["Name"]),
+
+          // View Details fields
+          "MobileTel": encryptValue(item["MobileTel"]),
+          "Email": encryptValue(item["Email"]),
+          "InstallmentPrem": encryptValue(item["InstallmentPrem"]),
+          "Make": encryptValue(item["Make"]),
+          "Model": encryptValue(item["Model"]),
+          "PolNCB": encryptValue(item["PolNCB"]),
+          "ActivityStatus": encryptValue(item["ActivityStatus"]),
+          "WFStatus": encryptValue(item["WFStatus"]),
+          "WFStatDesc": encryptValue(item["WFStatDesc"]),
+
+          // Telesales fields
+          "TelesaleActivity": encryptValue(item["TelesaleActivity"]),
+          "TelesaleActivityDoneBy": encryptValue(
+            item["TelesaleActivityDoneBy"],
+          ),
+          "TelesaleActivityDate": encryptValue(item["TelesaleActivityDate"]),
+          "TelesaleRemark": encryptValue(item["TelesaleRemark"]),
+
+          // Lead Summary fields
+          "CustTypeDesc": encryptValue(item["CustTypeDesc"]),
+          "CustPriorityDesc": encryptValue(item["CustPriorityDesc"]),
+          "LOB": encryptValue(item["LOB"]),
+          "LeadTypeDesc": encryptValue(item["LeadTypeDesc"]),
+          "SaleTypeDesc": encryptValue(item["SaleTypeDesc"]),
+          "isOwner": encryptValue(item["isOwner"]),
+          "OwnerName": encryptValue(item["OwnerName"]),
+          "AssignedTo": encryptValue(item["AssignedTo"]),
+          "AssignedToName": encryptValue(item["AssignedToName"]),
+          "ReqChannel": encryptValue(item["ReqChannel"]),
+          "ReqChannelId": encryptValue(item["ReqChannelId"]),
+          "LeadSource": encryptValue(item["LeadSource"]),
+          "LeadSourceDesc": encryptValue(item["LeadSourceDesc"]),
+          "LeadSubSource": encryptValue(item["LeadSubSource"]),
+          "LeadSubSourceDesc": encryptValue(item["LeadSubSourceDesc"]),
+          "LeadAging": encryptValue(item["LeadAging"]),
+          "BusinessType": encryptValue(item["BusinessType"]),
+          "BusinessTypeDesc": encryptValue(item["BusinessTypeDesc"]),
+          "LeadRating": encryptValue(item["LeadRating"]),
+          "Breaking": encryptValue(item["Breaking"]),
+          "PrevPolicyNo": encryptValue(item["PrevPolicyNo"]),
+
+          // Useful extra fields for cards / renewals / future use
+          "PolicyEndDate": encryptValue(item["PolicyEndDate"]),
+          "SrvcFromDTim": encryptValue(item["SrvcFromDTim"]),
+          "SrvcComments": encryptValue(item["SrvcComments"]),
+          "RenewalPaymentLink": encryptValue(item["RenewalPaymentLink"]),
+          "LOBCode": encryptValue(item["LOBCode"]),
+          "ProdCode": encryptValue(item["ProdCode"]),
+          "AgentCode": encryptValue(item["AgentCode"]),
+          "AgentName": encryptValue(item["AgentName"]),
+          "CreatedBy": encryptValue(item["CreatedBy"]),
+          "CreateDTim": encryptValue(item["CreateDTim"]),
+          "UpdatedBy": encryptValue(item["UpdatedBy"]),
+          "UpdateDTim": encryptValue(item["UpdateDTim"]),
+          "Remark": encryptValue(item["Remark"]),
+
+          // Local status
+          "SyncStatus": CommonUtil.encryptIfNotEmpty("Complete"),
+        };
+
+        batch.delete(
+          "LeadDetails",
+          where: "SrvcReqDtlCode = ?",
+          whereArgs: [srvcReqDtlCode],
+        );
+
+        batch.insert(
+          "LeadDetails",
+          leadMap,
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+      }
+
+      await batch.commit(noResult: true);
+
+      final count = Sqflite.firstIntValue(
+        await db.rawQuery("SELECT COUNT(*) FROM LeadDetails"),
+      );
+
+      print("LeadDetails total after savegriddashboarddata = $count");
+
+      return true;
+    } catch (e, st) {
+      print("savegriddashboarddata error: $e");
+      print(st);
+      return false;
+    }
   }
 }
