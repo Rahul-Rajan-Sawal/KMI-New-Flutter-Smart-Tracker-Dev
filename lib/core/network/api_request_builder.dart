@@ -681,7 +681,45 @@ class ApiRequestBuilder {
     };
   }
 
-  static Map<String, dynamic> CreateLeadFromMob({
+  static Map<String, dynamic> GetLeadDataForUser({
+    required String UserId,
+    required String CurMonth,
+    required String CallerId,
+    required String CallerPass,
+    required String TokenId,
+  }) {
+    return {
+      "UserId": UserId,
+      "CurMonth": CurMonth,
+      "CallerId": CallerId,
+      "CallerPass": CallerPass,
+      "TokenId": TokenId,
+    };
+  }
+
+  static Map<String, dynamic> getDataForDashboard({
+    required String UserId,
+    required String CurMonth,
+    required String ActivityCode,
+    required String SubActivityCode,
+    required String Status,
+    required String CallerId,
+    required String CallerPass,
+    required String TokenId,
+  }) {
+    return {
+      "UserId": UserId,
+      "ActivityCode": ActivityCode,
+      "SubActivityCode": SubActivityCode,
+      "CurMonth": CurMonth,
+      "Status": Status,
+      "CallerId": CallerId,
+      "CallerPass": CallerPass,
+      "TokenId": TokenId,
+    };
+  }
+
+   static Map<String, dynamic> CreateLeadFromMob({
     required String SAPCode,
     required String reqChannelId,
     required String leadSource,

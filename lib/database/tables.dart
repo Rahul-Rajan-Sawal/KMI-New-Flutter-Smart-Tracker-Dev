@@ -217,7 +217,7 @@ class DbTables {
     DROP TABLE IF EXISTS CalendarData_Mob
   ''';
 
-  static const ceadDetails = '''
+  static const LeadDetails = '''
 CREATE TABLE IF NOT EXISTS LeadDetails(
     RecId integer primary key autoincrement,
     SrvcReqDtlCode varchar,
@@ -259,6 +259,7 @@ CREATE TABLE IF NOT EXISTS LeadDetails(
     Remark varchar,
     ProposalNo varchar,
     PolicyNo varchar,
+    SumInsured varchar,
     PolicyStatus varchar,
     PolicyStartDate varchar,
     PolicyEndDate varchar,
@@ -836,6 +837,29 @@ CREATE TABLE IF NOT EXISTS Make_Master(
   Make_ARC TEXT NOT NULL,
   CeaseDate TEXT
 );
+''';
+
+  static const createDashboardIndexes = '''
+CREATE INDEX IF NOT EXISTS idx_dashboard_user_month 
+ON DashboardData_Mob(UserId, MothYear);
+
+CREATE INDEX IF NOT EXISTS idx_dashboard_user_month_activity 
+ON DashboardData_Mob(UserId, MothYear, Activity, SubActivity);
+
+CREATE INDEX IF NOT EXISTS idx_dashboard_user_month_leadtype 
+ON DashboardData_Mob(UserId, MothYear, LeadType);
+
+CREATE INDEX IF NOT EXISTS idx_team_dashboard_rm_month 
+ON TeamDashboardData_Mob(RMCode, MonthYear);
+
+CREATE INDEX IF NOT EXISTS idx_lead_details_srvc 
+ON LeadDetails(SrvcReqDtlCode);
+
+CREATE INDEX IF NOT EXISTS idx_lead_details_user_month_activity 
+ON LeadDetails(UserId, MothYear, Activity, SubActivity);
+
+CREATE INDEX IF NOT EXISTS idx_tracker_srvc 
+ON LMSLeadActivityTracker(SrvcReqDtlCode);
 ''';
 
   static const String createMstReqChannel = '''

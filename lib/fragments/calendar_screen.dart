@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bottom_nav/Activities/calendar_leaddetails.dart';
 import 'package:flutter_bottom_nav/Activities/filteractivity_calendar.dart';
+import 'package:flutter_bottom_nav/Providers/calendar_filter_provider.dart';
+import 'package:flutter_bottom_nav/Providers/calendar_provider.dart';
+import 'package:flutter_bottom_nav/Providers/calprovider.dart';
 import 'package:flutter_bottom_nav/core/apicall/async_getDashboardParam.dart';
 import 'package:flutter_bottom_nav/core/repository/commonrepo.dart';
 import 'package:flutter_bottom_nav/core/static_variables.dart';
-import 'package:flutter_bottom_nav/providers/calendar_filter_provider.dart';
-import 'package:flutter_bottom_nav/providers/calendar_provider.dart';
+import 'package:flutter_bottom_nav/models/Calendar/calendar_lead_args.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:table_calendar/table_calendar.dart';
 
@@ -349,17 +353,72 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                   lastDay: lastDate,
                   focusedDay: _focusedDay,
 
-                  selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
+                  calendarStyle: const CalendarStyle(
+                    todayDecoration: BoxDecoration(
+                      color: Colors.transparent,
+                      shape: BoxShape.circle,
+                    ),
+                    todayTextStyle: TextStyle(
+                      color: Colors.black,
+                      fontWeight: FontWeight.normal,
+                    ),
+                  ),
 
-                  onDaySelected: (selected, focused) {
+                  // selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
+
+                  // onDaySelected: (selected, focused) {
+                  //   setState(() {
+                  //     _selectedDay = selected;
+                  //     _focusedDay = focused;
+                  //   });
+                  // },
+                  onDaySelected: (selectedDay, focusedDay) {
+                    final normalizedDate = normalize(selectedDay);
+                    final selectedDateCount = dayCounts[normalizedDate] ?? 0;
+
+                    // Android also opens the page only when the date has leads.
+                    if (selectedDateCount <= 0) {
+                      return;
+                    }
+
                     setState(() {
-                      _selectedDay = selected;
-                      _focusedDay = focused;
+                      _focusedDay = focusedDay;
                     });
+
+                    final currentFilters = ref.read(calendarFilterProvider);
+
+                    final leadArgs = CalendarLeadArgs(
+                      selectedDate: normalizedDate,
+                      expectedCount: selectedDateCount,
+
+                      // This calendar currently displays renewal leads.
+                      businessType: 'R',
+
+                      filters: currentFilters,
+                    );
+
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => Leaddetails(args: leadArgs),
+                      ),
+                    );
                   },
 
+                  // onPageChanged: (focusedDay) {
+                  //   _focusedDay = focusedDay;
+                  // },
                   onPageChanged: (focusedDay) {
-                    _focusedDay = focusedDay;
+                    final firstDateOfSelectedMonth = DateTime(
+                      focusedDay.year,
+                      focusedDay.month,
+                      1,
+                    );
+
+                    _focusedDay = firstDateOfSelectedMonth;
+
+                    ref.read(currentMonthProvider.notifier).state =
+                        firstDateOfSelectedMonth;
                   },
 
                   calendarBuilders: CalendarBuilders(
@@ -448,13 +507,17 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   void _onFilterClick() async {
     print("Filter button clicked");
 
-    final now = DateTime.now();
+    // final now = DateTime.now();
 
-    final year = now.year.toString();
-    final month = now.month.toString().padLeft(2, '0');
+    // final year = now.year.toString();
+    // final month = now.month.toString().padLeft(2, '0');
 
+    final selectedMonth = ref.read(currentMonthProvider);
 
-    // needs to optimize to check db first 
+    final year = selectedMonth.year.toString();
+    final month = selectedMonth.month.toString().padLeft(2, '0');
+
+    // needs to optimize to check db first
     final response = await GetDashboardParamApi.getData(
       sapCode: StaticVariables.mSAPCode,
       branchCode: '',
@@ -473,7 +536,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
     if (!mounted) return;
 
-    Navigator.push(
+    final applied = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
         builder: (context) => CalendarFilterActivity(
@@ -484,6 +547,31 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         ),
       ),
     );
+
+    if (applied == true && mounted) {
+      print("FILTER APPLIED, RELOADING CALENDAR");
+
+      final latestFilters = ref.read(calendarFilterProvider);
+
+      print("CALENDAR SCREEN AFTER POP");
+      print("Zone: ${latestFilters.zone}");
+      print("Region: ${latestFilters.region}");
+      print("Branch: ${latestFilters.branch}");
+      print("Agent: ${latestFilters.agent}");
+
+      ref.read(calendarProvider.notifier).loadData(forceRefresh: false);
+    }
+    // Navigator.push(
+    //   context,
+    //   MaterialPageRoute(
+    //     builder: (context) => CalendarFilterActivity(
+    //       userId: StaticVariables.mSAPCode,
+    //       year: year,
+    //       month: month,
+    //       isTeam: false,
+    //     ),
+    //   ),
+    // );
   }
 
   Widget _buildIcon() {

@@ -35,7 +35,7 @@ class DatabaseHelper {
     await db.execute(DbTables.createUserTable);
     try {
       print("Tables creation initiated");
-      await db.execute(DbTables.ceadDetails);
+      await db.execute(DbTables.LeadDetails);
       await db.execute(DbTables.createTbl_DashboardData_Mob);
       await db.execute(DbTables.createTbl_TeamDashboardData_Mob);
       await db.execute(DbTables.CreateTbl_CBFrmMSTLOB);
@@ -49,6 +49,7 @@ class DatabaseHelper {
       await db.execute(DbTables.createTbl_Reference);
       await db.execute(DbTables.createTbl_LookUpSU);
       await db.execute(DbTables.createTbl_Make_Master);
+      await db.execute(DbTables.createDashboardIndexes);
       await db.execute(DbTables.createMstReqChannel);
       print("Table Created TBL_AGENT_CNT_DTLS");
       print(
@@ -77,7 +78,7 @@ class DatabaseHelper {
         await txn.execute(DbTables.dropLMSLeadActivityTracker);
 
         // 2. Recreate tables
-        await txn.execute(DbTables.ceadDetails); // LeadDetails
+        await txn.execute(DbTables.LeadDetails); // LeadDetails
         await txn.execute(DbTables.lmsLeadActivityTracker);
       });
 
@@ -104,6 +105,7 @@ class DatabaseHelper {
     await db.execute(DbTables.dropTbl_Reference);
     await db.execute(DbTables.dropTbl_LookUpSU);
     await db.execute(DbTables.dropTbl_Make_Master);
+    await db.execute(DbTables.createDashboardIndexes);
     await db.execute(DbTables.dropMstReqChannel);
     await _onCreate(db, newVersion);
   }

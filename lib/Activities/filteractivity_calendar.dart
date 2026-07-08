@@ -351,6 +351,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bottom_nav/Providers/CalendarFilter/cal_mst_filter_provider.dart';
 import 'package:flutter_bottom_nav/Providers/calendar_filter_provider.dart';
+import 'package:flutter_bottom_nav/Providers/calendar_provider.dart';
 import 'package:flutter_bottom_nav/models/Calendar/filter_option.dart';
 import 'package:flutter_bottom_nav/models/CalendarFilter/Mstcalendarfiterstate.dart';
 import 'package:flutter_bottom_nav/models/CalendarFilterState.dart';
@@ -518,7 +519,11 @@ class _CalendarFilterActivityState
                         calMstFilterProvider(mstArgs),
                       );
 
-                      final appliedState = filterState.copyWith(
+                      final currentFilterState = ref.read(
+                        calendarFilterProvider,
+                      );
+
+                      final appliedState = currentFilterState.copyWith(
                         zone: latestMstState.selectedZones
                             .map((e) => e.code)
                             .toList(),
@@ -537,6 +542,7 @@ class _CalendarFilterActivityState
                         reference: latestMstState.selectedReferences
                             .map((e) => e.code)
                             .toList(),
+
                         lob: latestMstState.selectedLobs
                             .map((e) => e.code)
                             .toList(),
@@ -550,6 +556,7 @@ class _CalendarFilterActivityState
                             .selectedProductSubCategories
                             .map((e) => e.code)
                             .toList(),
+
                         renewalYearCount: latestMstState
                             .selectedRenewalYearCounts
                             .map((e) => e.code)
@@ -560,6 +567,7 @@ class _CalendarFilterActivityState
                         preferred: latestMstState.selectedPreferred
                             .map((e) => e.code)
                             .toList(),
+
                         nilDep: _firstCode(latestMstState.selectedNilDep),
                         categoryName: _firstCode(
                           latestMstState.selectedCategory,
@@ -591,12 +599,183 @@ class _CalendarFilterActivityState
                         lifeGroup: _firstCode(latestMstState.selectedLifeGroup),
                       );
 
+                      print("APPLY CLICKED");
+
                       ref
                           .read(calendarFilterProvider.notifier)
                           .setFilters(appliedState);
 
-                      Navigator.pop(context, appliedState);
+                      final updated = ref.read(calendarFilterProvider);
+
+                      print("AFTER SET FILTERS");
+                      print("Zone: ${updated.zone}");
+                      print("Region: ${updated.region}");
+                      print("Branch: ${updated.branch}");
+                      print("Agent: ${updated.agent}");
+                      print("LOB: ${updated.lob}");
+                      print("ProductGroup: ${updated.productGroup}");
+                      print("Product: ${updated.product}");
+
+                      Navigator.pop(context, true);
                     },
+
+                    // onPressed: () {
+                    //   final latestMstState = ref.read(
+                    //     calMstFilterProvider(mstArgs),
+                    //   );
+
+                    //   final appliedState = filterState.copyWith(
+                    //     zone: latestMstState.selectedZones
+                    //         .map((e) => e.code)
+                    //         .toList(),
+                    //     region: latestMstState.selectedRegions
+                    //         .map((e) => e.code)
+                    //         .toList(),
+                    //     branch: latestMstState.selectedBranches
+                    //         .map((e) => e.code)
+                    //         .toList(),
+                    //     salesManager: latestMstState.selectedSalesManagers
+                    //         .map((e) => e.code)
+                    //         .toList(),
+                    //     agent: latestMstState.selectedAgents
+                    //         .map((e) => e.code)
+                    //         .toList(),
+                    //     reference: latestMstState.selectedReferences
+                    //         .map((e) => e.code)
+                    //         .toList(),
+                    //     lob: latestMstState.selectedLobs
+                    //         .map((e) => e.code)
+                    //         .toList(),
+                    //     productGroup: latestMstState.selectedProductGroups
+                    //         .map((e) => e.code)
+                    //         .toList(),
+                    //     product: latestMstState.selectedProducts
+                    //         .map((e) => e.code)
+                    //         .toList(),
+                    //     productSubCategory: latestMstState
+                    //         .selectedProductSubCategories
+                    //         .map((e) => e.code)
+                    //         .toList(),
+                    //     renewalYearCount: latestMstState
+                    //         .selectedRenewalYearCounts
+                    //         .map((e) => e.code)
+                    //         .toList(),
+                    //     ncb: latestMstState.selectedNcb
+                    //         .map((e) => e.code)
+                    //         .toList(),
+                    //     preferred: latestMstState.selectedPreferred
+                    //         .map((e) => e.code)
+                    //         .toList(),
+                    //   );
+
+                    //   // 1. set filters
+                    //   print("APPLY CLICKED");
+                    //   ref
+                    //       .read(calendarFilterProvider.notifier)
+                    //       .setFilters(appliedState);
+
+                    //   final updated = ref.read(calendarFilterProvider);
+
+                    //   print("AFTER SET FILTERS");
+                    //   print("Zone: ${updated.zone}");
+                    //   print("Region: ${updated.region}");
+                    //   print("Branch: ${updated.branch}");
+                    //   print("Agent: ${updated.agent}");
+
+                    //   // 2. FORCE REFRESH CALENDAR DATA  👈 THIS IS MISSING
+                    // //changes on 25 june
+                    //   // ref.read(calendarProvider.notifier).refresh();
+                    //   // ref.read(calendarFilterProvider.notifier).setFilters(appliedState);
+
+                    //   ref.read(calendarProvider.notifier).refresh();
+                    //   Navigator.pop(context);
+                    // },
+
+                    // onPressed: () {
+                    //   final latestMstState = ref.read(
+                    //     calMstFilterProvider(mstArgs),
+                    //   );
+
+                    //   final appliedState = filterState.copyWith(
+                    //     zone: latestMstState.selectedZones
+                    //         .map((e) => e.code)
+                    //         .toList(),
+                    //     region: latestMstState.selectedRegions
+                    //         .map((e) => e.code)
+                    //         .toList(),
+                    //     branch: latestMstState.selectedBranches
+                    //         .map((e) => e.code)
+                    //         .toList(),
+                    //     salesManager: latestMstState.selectedSalesManagers
+                    //         .map((e) => e.code)
+                    //         .toList(),
+                    //     agent: latestMstState.selectedAgents
+                    //         .map((e) => e.code)
+                    //         .toList(),
+                    //     reference: latestMstState.selectedReferences
+                    //         .map((e) => e.code)
+                    //         .toList(),
+                    //     lob: latestMstState.selectedLobs
+                    //         .map((e) => e.code)
+                    //         .toList(),
+                    //     productGroup: latestMstState.selectedProductGroups
+                    //         .map((e) => e.code)
+                    //         .toList(),
+                    //     product: latestMstState.selectedProducts
+                    //         .map((e) => e.code)
+                    //         .toList(),
+                    //     productSubCategory: latestMstState
+                    //         .selectedProductSubCategories
+                    //         .map((e) => e.code)
+                    //         .toList(),
+                    //     renewalYearCount: latestMstState
+                    //         .selectedRenewalYearCounts
+                    //         .map((e) => e.code)
+                    //         .toList(),
+                    //     ncb: latestMstState.selectedNcb
+                    //         .map((e) => e.code)
+                    //         .toList(),
+                    //     preferred: latestMstState.selectedPreferred
+                    //         .map((e) => e.code)
+                    //         .toList(),
+                    //     nilDep: _firstCode(latestMstState.selectedNilDep),
+                    //     categoryName: _firstCode(
+                    //       latestMstState.selectedCategory,
+                    //     ),
+                    //     mopedType: _firstCode(latestMstState.selectedMopedType),
+                    //     gvw: _firstCode(latestMstState.selectedGvw),
+                    //     fuelType: _firstCode(latestMstState.selectedFuelType),
+                    //     make: _firstCode(latestMstState.selectedMake),
+                    //     vehicleAgeGrp: _firstCode(
+                    //       latestMstState.selectedVehicleAgeGroup,
+                    //     ),
+                    //     seatingCapacity: _firstCode(
+                    //       latestMstState.selectedSeatingCapacity,
+                    //     ),
+                    //     ageGroup: _firstCode(latestMstState.selectedAgeGroup),
+                    //     familySize: _firstCode(
+                    //       latestMstState.selectedFamilySize,
+                    //     ),
+                    //     sumInsuredBand: _firstCode(
+                    //       latestMstState.selectedSumInsuredBand,
+                    //     ),
+                    //     preExisting: _firstCode(
+                    //       latestMstState.selectedPreExisting,
+                    //     ),
+                    //     occupancy: _firstCode(latestMstState.selectedOccupancy),
+                    //     sumInsured: _firstCode(
+                    //       latestMstState.selectedSumInsured,
+                    //     ),
+                    //     lifeGroup: _firstCode(latestMstState.selectedLifeGroup),
+                    //   );
+
+                    //   ref
+                    //       .read(calendarFilterProvider.notifier)
+                    //       .setFilters(appliedState);
+                    // ref.read(calendarProvider.notifier).refresh();
+
+                    //   Navigator.pop(context, appliedState);
+                    // },
                     child: const Text("Apply"),
                   ),
                 ),

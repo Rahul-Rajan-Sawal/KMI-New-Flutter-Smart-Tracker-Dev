@@ -436,6 +436,167 @@ class DashboardRepository {
       premiumCollectedCount: premiumCollectedCount,
       policyIssuedCount: policyIssuedCount,
     );
+
+    return rows.map((row) => DashboardDetailModel.fromDb(row)).toList();
+  }
+
+  //dashboard lost lead saving for grid data
+  Future<bool> savegriddashboarddata({
+    required String rmCode,
+    required String month,
+    required String activityCode,
+    required String subActivityCode,
+    required String statusFlag,
+  }) async {
+    try {
+      final response = await GetDataForDashboard.getDataForDashboard(
+        UserId: rmCode,
+        CurMonth: _dashboardDetailApiMonth(month),
+        //CurMonth: month,
+        ActivityCode: activityCode,
+        SubActivityCode: subActivityCode,
+        Status: statusFlag,
+      );
+
+      final table = response["Table"];
+
+      if (table == null || table is! List || table.isEmpty) {
+        print("GetDataForDashboard Table empty");
+        return false;
+      }
+
+      final db = await dbHelper.database;
+      final batch = db.batch();
+
+      final monthValue = month.length >= 7 ? month.substring(0, 7) : month;
+
+      String encryptValue(dynamic value) {
+        return CommonUtil.encryptIfNotEmpty(value?.toString() ?? "");
+      }
+
+      for (final row in table) {
+        if (row is! Map) continue;
+
+        final item = Map<String, dynamic>.from(row);
+
+        final srvcReqDtlCode = item["SrvcReqDtlCode"]?.toString() ?? "";
+
+        if (srvcReqDtlCode.trim().isEmpty) {
+          continue;
+        }
+
+        final leadMap = <String, dynamic>{
+          // Keep these plain because they are used in query/filter/navigation
+          "SrvcReqDtlCode": srvcReqDtlCode,
+          "UserId":
+              item["UserId"]?.toString().toUpperCase() ?? rmCode.toUpperCase(),
+          "SMCode": item["SMCode"]?.toString() ?? rmCode,
+          "MothYear": item["MothYear"]?.toString().isNotEmpty == true
+              ? item["MothYear"].toString()
+              : monthValue,
+          "Activity": item["ActivityCode"]?.toString().isNotEmpty == true
+              ? item["ActivityCode"].toString()
+              : activityCode,
+          "SubActivity": item["SubActivityCode"]?.toString().isNotEmpty == true
+              ? item["SubActivityCode"].toString()
+              : subActivityCode,
+          "LeadType": item["LeadType"]?.toString() ?? "",
+
+          // Dashboard grid fields
+          "PolicyNo": encryptValue(item["PolicyNo"]),
+          "ProdName": encryptValue(item["ProdName"]),
+          "leadAmt": encryptValue(item["leadAmt"]),
+          "Amount": encryptValue(item["Amount"]),
+          "Name": encryptValue(item["Name"]),
+
+          // View Details fields
+          "MobileTel": encryptValue(item["MobileTel"]),
+          "Email": encryptValue(item["Email"]),
+          "InstallmentPrem": encryptValue(item["InstallmentPrem"]),
+          "Make": encryptValue(item["Make"]),
+          "Model": encryptValue(item["Model"]),
+          "PolNCB": encryptValue(item["PolNCB"]),
+          "ActivityStatus": encryptValue(item["ActivityStatus"]),
+          "WFStatus": encryptValue(item["WFStatus"]),
+          "WFStatDesc": encryptValue(item["WFStatDesc"]),
+
+          // Telesales fields
+          "TelesaleActivity": encryptValue(item["TelesaleActivity"]),
+          "TelesaleActivityDoneBy": encryptValue(
+            item["TelesaleActivityDoneBy"],
+          ),
+          "TelesaleActivityDate": encryptValue(item["TelesaleActivityDate"]),
+          "TelesaleRemark": encryptValue(item["TelesaleRemark"]),
+
+          // Lead Summary fields
+          "CustTypeDesc": encryptValue(item["CustTypeDesc"]),
+          "CustPriorityDesc": encryptValue(item["CustPriorityDesc"]),
+          "LOB": encryptValue(item["LOB"]),
+          "LeadTypeDesc": encryptValue(item["LeadTypeDesc"]),
+          "SaleTypeDesc": encryptValue(item["SaleTypeDesc"]),
+          "isOwner": encryptValue(item["isOwner"]),
+          "OwnerName": encryptValue(item["OwnerName"]),
+          "AssignedTo": encryptValue(item["AssignedTo"]),
+          "AssignedToName": encryptValue(item["AssignedToName"]),
+          "ReqChannel": encryptValue(item["ReqChannel"]),
+          "ReqChannelId": encryptValue(item["ReqChannelId"]),
+          "LeadSource": encryptValue(item["LeadSource"]),
+          "LeadSourceDesc": encryptValue(item["LeadSourceDesc"]),
+          "LeadSubSource": encryptValue(item["LeadSubSource"]),
+          "LeadSubSourceDesc": encryptValue(item["LeadSubSourceDesc"]),
+          "LeadAging": encryptValue(item["LeadAging"]),
+          "BusinessType": encryptValue(item["BusinessType"]),
+          "BusinessTypeDesc": encryptValue(item["BusinessTypeDesc"]),
+          "LeadRating": encryptValue(item["LeadRating"]),
+          "Breaking": encryptValue(item["Breaking"]),
+          "PrevPolicyNo": encryptValue(item["PrevPolicyNo"]),
+
+          // Useful extra fields for cards / renewals / future use
+          "PolicyEndDate": encryptValue(item["PolicyEndDate"]),
+          "SrvcFromDTim": encryptValue(item["SrvcFromDTim"]),
+          "SrvcComments": encryptValue(item["SrvcComments"]),
+          "RenewalPaymentLink": encryptValue(item["RenewalPaymentLink"]),
+          "LOBCode": encryptValue(item["LOBCode"]),
+          "ProdCode": encryptValue(item["ProdCode"]),
+          "AgentCode": encryptValue(item["AgentCode"]),
+          "AgentName": encryptValue(item["AgentName"]),
+          "CreatedBy": encryptValue(item["CreatedBy"]),
+          "CreateDTim": encryptValue(item["CreateDTim"]),
+          "UpdatedBy": encryptValue(item["UpdatedBy"]),
+          "UpdateDTim": encryptValue(item["UpdateDTim"]),
+          "Remark": encryptValue(item["Remark"]),
+
+          // Local status
+          "SyncStatus": CommonUtil.encryptIfNotEmpty("Complete"),
+        };
+
+        batch.delete(
+          "LeadDetails",
+          where: "SrvcReqDtlCode = ?",
+          whereArgs: [srvcReqDtlCode],
+        );
+
+        batch.insert(
+          "LeadDetails",
+          leadMap,
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+      }
+
+      await batch.commit(noResult: true);
+
+      final count = Sqflite.firstIntValue(
+        await db.rawQuery("SELECT COUNT(*) FROM LeadDetails"),
+      );
+
+      print("LeadDetails total after savegriddashboarddata = $count");
+
+      return true;
+    } catch (e, st) {
+      print("savegriddashboarddata error: $e");
+      print(st);
+      return false;
+    }
   }
 
   Future<List<DashboardDetailModel>> getDashboardDetailsFromDb({
