@@ -347,7 +347,48 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
     );
   }
 
+  //added for the lead open radio
+  CardData _getUpdatedSelectedCard(DashboardSummary summary) {
+    switch (_selectedCard?.title) {
+      case "Converted":
+        return CardData(
+          title: "Converted",
+          percentage: "${summary.convertedPercentage.toStringAsFixed(2)}%",
+          nop: summary.convertedCount.toString(),
+          gwp: CommonUtil.getValueInLakh(summary.convertedAmount),
+        );
+
+      case "Lost":
+        return CardData(
+          title: "Lost",
+          percentage: "${summary.lostPercentage.toStringAsFixed(2)}%",
+          nop: summary.lostCount.toString(),
+          gwp: CommonUtil.getValueInLakh(summary.lostAmount),
+        );
+
+      case "Open":
+        return CardData(
+          title: "Open",
+          percentage: "${summary.openPercentage.toStringAsFixed(2)}%",
+          nop: summary.openCount.toString(),
+          gwp: CommonUtil.getValueInLakh(summary.openAmount),
+        );
+
+      case "Sale Closed":
+        return CardData(
+          title: "Sale Closed",
+          percentage: "${summary.salesClosedPercentage.toStringAsFixed(2)}%",
+          nop: summary.salesCloseCount.toString(),
+          gwp: CommonUtil.getValueInLakh(summary.salesCloseAmount),
+        );
+
+      default:
+        return _selectedCard!;
+    }
+  }
+
   Widget _buildExpandedSection(DashboardSummary summary) {
+    final selectedCard = _getUpdatedSelectedCard(summary);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -369,7 +410,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
             child: Column(
               children: [
                 Text(
-                  _selectedCard!.title,
+                  // _selectedCard!.title,
+                  selectedCard.title,
                   style: const TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
@@ -377,18 +419,37 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                   ),
                 ),
                 const SizedBox(height: 12),
+
+                // Row(
+                //   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                //   children: [
+                //     _buildStatColumn("NOP", _selectedCard!.nop.toString()),
+                //     _buildStatColumn(
+                //       "GWP(in Lacs)",
+                //       _selectedCard!.gwp.toString(),
+                //     ),
+                //     _buildStatColumn(
+                //       "Percentage",
+                //       _selectedCard!.percentage.toString(),
+                //     ),
+                //   ],
+                // ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    _buildStatColumn("NOP", _selectedCard!.nop.toString()),
-                    _buildStatColumn(
-                      "GWP(in Lacs)",
-                      _selectedCard!.gwp.toString(),
-                    ),
-                    _buildStatColumn(
-                      "Percentage",
-                      _selectedCard!.percentage.toString(),
-                    ),
+                    _buildStatColumn("NOP", selectedCard.nop),
+                    _buildStatColumn("GWP(in Lacs)", selectedCard.gwp),
+                    _buildStatColumn("Percentage", selectedCard.percentage),
+                  ],
+                ),
+                // Radio btns
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _buildRadioItem("All", 1),
+                    _buildRadioItem("Contact", 2),
+                    _buildRadioItem("Lead", 3),
                   ],
                 ),
               ],
@@ -413,8 +474,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
         //   const SizedBox(height: 16),
         //   _buildRecyclerGrid(),
         // ],
-        const SizedBox(height: 16),
-        _buildRecyclerGrid(),
+        // const SizedBox(height: 16),
+        // _buildRecyclerGrid(),
+        if (_selectedCard?.title == "Open") ...[
+          const SizedBox(height: 16),
+          _buildRecyclerGrid(),
+        ],
       ],
     );
   }
@@ -449,17 +514,39 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
       );
     }
 
+    // if (selectedTitle == "Open") {
+    //   return Row(
+    //     children: [
+    //       Expanded(
+    //         child: _buildMiniCard("Parked", summary.parkedCount.toString()),
+    //       ),
+    //       const SizedBox(width: 12),
+    //       Expanded(
+    //         child: _buildMiniCard(
+    //           "Follow Up",
+    //           summary.followUpCount.toString(),
+    //         ),
+    //       ),
+    //     ],
+    //   );
+    // }
+
     if (selectedTitle == "Open") {
       return Row(
         children: [
           Expanded(
-            child: _buildMiniCard("Parked", summary.parkedCount.toString()),
+            child: _buildOpenLeadCard(
+              title: "Parked",
+              nop: summary.parkedCount.toString(),
+              gwp: CommonUtil.getValueInLakh(summary.parkedAmount),
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: _buildMiniCard(
-              "Follow Up",
-              summary.followUpCount.toString(),
+            child: _buildOpenLeadCard(
+              title: "Follow Up",
+              nop: summary.followUpCount.toString(),
+              gwp: CommonUtil.getValueInLakh(summary.followUpAmount),
             ),
           ),
         ],
@@ -1298,6 +1385,73 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
     );
   }
 
+  //addd by rahul
+  Widget _buildOpenLeadCard({
+    required String title,
+    required String nop,
+    required String gwp,
+  }) {
+    return Card(
+      elevation: 4,
+      child: SizedBox(
+        height: 105,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF17479e),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _buildOpenMetric("NOP", nop),
+                  const SizedBox(
+                    height: 30,
+                    child: VerticalDivider(color: Colors.grey, thickness: 1),
+                  ),
+                  _buildOpenMetric("GWP", gwp),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOpenMetric(String label, String value) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.bold,
+            color: Colors.black87,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 11,
+            color: Colors.grey,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
+  }
+
   // Widget _buildRadioItem(String title, int value) {
   //   return Row(
   //     mainAxisSize: MainAxisSize.min, // Keep row tight
@@ -1347,6 +1501,24 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                         month: currentMonthParam,
                         leadType: newValue,
                       );
+                  // if (_selectedCard != null) {
+                  //   await ref
+                  //       .read(dashboardProvider.notifier)
+                  //       .loadDashboardDetails(
+                  //         rmCode: StaticVariables.mSAPCode.toUpperCase(),
+                  //         month: currentMonthParam,
+                  //         status: _selectedCard!.title,
+                  //         leadType: newValue,
+                  //       );
+                  // }
+
+                  //newly added by rahul
+
+                  setState(() {
+                    _isGridFilterApplied = false;
+                    _gridFilteredList.clear();
+                  });
+
                   if (_selectedCard != null) {
                     await ref
                         .read(dashboardProvider.notifier)

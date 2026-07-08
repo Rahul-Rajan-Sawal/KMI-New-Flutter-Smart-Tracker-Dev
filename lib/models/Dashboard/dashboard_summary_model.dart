@@ -22,6 +22,8 @@ class DashboardSummary {
   // Open sub status
   final int parkedCount;
   final int followUpCount;
+  final double parkedAmount;
+  final double followUpAmount;
 
   // Sales Closed sub status
   final int premiumCollectedCount;
@@ -44,6 +46,8 @@ class DashboardSummary {
     this.notInterestedCount = 0,
     this.parkedCount = 0,
     this.followUpCount = 0,
+    this.parkedAmount = 0,
+    this.followUpAmount = 0,
     this.premiumCollectedCount = 0,
     this.policyIssuedCount = 0,
   });
