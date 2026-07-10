@@ -307,6 +307,10 @@ class DashboardRepository {
     int notRespondingCount = 0;
     int notInterestedCount = 0;
 
+    double lostToCompetitionAmount = 0;
+    double notRespondingAmount = 0;
+    double notInterestedAmount = 0;
+
     int parkedCount = 0;
     int followUpCount = 0;
     double parkedAmount = 0;
@@ -314,6 +318,8 @@ class DashboardRepository {
 
     int premiumCollectedCount = 0;
     int policyIssuedCount = 0;
+    double premiumCollectedAmount = 0;
+    double policyIssuedAmount = 0;
 
     for (var row in rows) {
       String sActivity = row["Activity"]?.toString() ?? "";
@@ -340,15 +346,39 @@ class DashboardRepository {
       int wipLeads = int.tryParse(row["WIPLeads"]?.toString() ?? "0") ?? 0;
       double amount = double.tryParse(row["Amount"]?.toString() ?? "0") ?? 0;
 
-      lostToCompetitionCount +=
+      // lostToCompetitionCount +=
+      //     int.tryParse(row["Lost_To_Competition"]?.toString() ?? "0") ?? 0;
+
+      // notRespondingCount +=
+      //     int.tryParse(row["Customer_Not_Responding"]?.toString() ?? "0") ?? 0;
+
+      // notInterestedCount +=
+      //     int.tryParse(row["Customer_Not_Interested"]?.toString() ?? "0") ?? 0;
+
+      final lostToCompetition =
           int.tryParse(row["Lost_To_Competition"]?.toString() ?? "0") ?? 0;
 
-      notRespondingCount +=
+      final notResponding =
           int.tryParse(row["Customer_Not_Responding"]?.toString() ?? "0") ?? 0;
 
-      notInterestedCount +=
+      final notInterested =
           int.tryParse(row["Customer_Not_Interested"]?.toString() ?? "0") ?? 0;
 
+      lostToCompetitionCount += lostToCompetition;
+      notRespondingCount += notResponding;
+      notInterestedCount += notInterested;
+
+      if (lostToCompetition > 0) {
+        lostToCompetitionAmount += amount;
+      }
+
+      if (notResponding > 0) {
+        notRespondingAmount += amount;
+      }
+
+      if (notInterested > 0) {
+        notInterestedAmount += amount;
+      }
       // parkedCount += int.tryParse(row["ParkLead"]?.toString() ?? "0") ?? 0;
 
       // followUpCount += int.tryParse(row["FollowUp"]?.toString() ?? "0") ?? 0;
@@ -369,11 +399,27 @@ class DashboardRepository {
       }
       //new added
 
-      premiumCollectedCount +=
+      // premiumCollectedCount +=
+      //     int.tryParse(row["Premium_Collected"]?.toString() ?? "0") ?? 0;
+
+      // policyIssuedCount +=
+      //     int.tryParse(row["Policy_Issued"]?.toString() ?? "0") ?? 0;
+      final premiumCollected =
           int.tryParse(row["Premium_Collected"]?.toString() ?? "0") ?? 0;
 
-      policyIssuedCount +=
+      final policyIssued =
           int.tryParse(row["Policy_Issued"]?.toString() ?? "0") ?? 0;
+
+      premiumCollectedCount += premiumCollected;
+      policyIssuedCount += policyIssued;
+
+      if (premiumCollected > 0) {
+        premiumCollectedAmount += amount;
+      }
+
+      if (policyIssued > 0) {
+        policyIssuedAmount += amount;
+      }
 
       totalLeads += leadConverted + leadLost + wipLeads;
 
@@ -429,174 +475,18 @@ class DashboardRepository {
       lostToCompetitionCount: lostToCompetitionCount,
       notRespondingCount: notRespondingCount,
       notInterestedCount: notInterestedCount,
+      lostToCompetitionAmount: lostToCompetitionAmount,
+      notRespondingAmount: notRespondingAmount,
+      notInterestedAmount: notInterestedAmount,
       parkedCount: parkedCount,
       followUpCount: followUpCount,
       parkedAmount: parkedAmount,
       followUpAmount: followUpAmount,
       premiumCollectedCount: premiumCollectedCount,
       policyIssuedCount: policyIssuedCount,
+      premiumCollectedAmount: premiumCollectedAmount,
+      policyIssuedAmount: policyIssuedAmount,
     );
-
-    return rows.map((row) => DashboardDetailModel.fromDb(row)).toList();
-  }
-
-  //dashboard lost lead saving for grid data
-  Future<bool> savegriddashboarddata({
-    required String rmCode,
-    required String month,
-    required String activityCode,
-    required String subActivityCode,
-    required String statusFlag,
-  }) async {
-    try {
-      final response = await GetDataForDashboard.getDataForDashboard(
-        UserId: rmCode,
-        CurMonth: _dashboardDetailApiMonth(month),
-        //CurMonth: month,
-        ActivityCode: activityCode,
-        SubActivityCode: subActivityCode,
-        Status: statusFlag,
-      );
-
-      final table = response["Table"];
-
-      if (table == null || table is! List || table.isEmpty) {
-        print("GetDataForDashboard Table empty");
-        return false;
-      }
-
-      final db = await dbHelper.database;
-      final batch = db.batch();
-
-      final monthValue = month.length >= 7 ? month.substring(0, 7) : month;
-
-      String encryptValue(dynamic value) {
-        return CommonUtil.encryptIfNotEmpty(value?.toString() ?? "");
-      }
-
-      for (final row in table) {
-        if (row is! Map) continue;
-
-        final item = Map<String, dynamic>.from(row);
-
-        final srvcReqDtlCode = item["SrvcReqDtlCode"]?.toString() ?? "";
-
-        if (srvcReqDtlCode.trim().isEmpty) {
-          continue;
-        }
-
-        final leadMap = <String, dynamic>{
-          // Keep these plain because they are used in query/filter/navigation
-          "SrvcReqDtlCode": srvcReqDtlCode,
-          "UserId":
-              item["UserId"]?.toString().toUpperCase() ?? rmCode.toUpperCase(),
-          "SMCode": item["SMCode"]?.toString() ?? rmCode,
-          "MothYear": item["MothYear"]?.toString().isNotEmpty == true
-              ? item["MothYear"].toString()
-              : monthValue,
-          "Activity": item["ActivityCode"]?.toString().isNotEmpty == true
-              ? item["ActivityCode"].toString()
-              : activityCode,
-          "SubActivity": item["SubActivityCode"]?.toString().isNotEmpty == true
-              ? item["SubActivityCode"].toString()
-              : subActivityCode,
-          "LeadType": item["LeadType"]?.toString() ?? "",
-
-          // Dashboard grid fields
-          "PolicyNo": encryptValue(item["PolicyNo"]),
-          "ProdName": encryptValue(item["ProdName"]),
-          "leadAmt": encryptValue(item["leadAmt"]),
-          "Amount": encryptValue(item["Amount"]),
-          "Name": encryptValue(item["Name"]),
-
-          // View Details fields
-          "MobileTel": encryptValue(item["MobileTel"]),
-          "Email": encryptValue(item["Email"]),
-          "InstallmentPrem": encryptValue(item["InstallmentPrem"]),
-          "Make": encryptValue(item["Make"]),
-          "Model": encryptValue(item["Model"]),
-          "PolNCB": encryptValue(item["PolNCB"]),
-          "ActivityStatus": encryptValue(item["ActivityStatus"]),
-          "WFStatus": encryptValue(item["WFStatus"]),
-          "WFStatDesc": encryptValue(item["WFStatDesc"]),
-
-          // Telesales fields
-          "TelesaleActivity": encryptValue(item["TelesaleActivity"]),
-          "TelesaleActivityDoneBy": encryptValue(
-            item["TelesaleActivityDoneBy"],
-          ),
-          "TelesaleActivityDate": encryptValue(item["TelesaleActivityDate"]),
-          "TelesaleRemark": encryptValue(item["TelesaleRemark"]),
-
-          // Lead Summary fields
-          "CustTypeDesc": encryptValue(item["CustTypeDesc"]),
-          "CustPriorityDesc": encryptValue(item["CustPriorityDesc"]),
-          "LOB": encryptValue(item["LOB"]),
-          "LeadTypeDesc": encryptValue(item["LeadTypeDesc"]),
-          "SaleTypeDesc": encryptValue(item["SaleTypeDesc"]),
-          "isOwner": encryptValue(item["isOwner"]),
-          "OwnerName": encryptValue(item["OwnerName"]),
-          "AssignedTo": encryptValue(item["AssignedTo"]),
-          "AssignedToName": encryptValue(item["AssignedToName"]),
-          "ReqChannel": encryptValue(item["ReqChannel"]),
-          "ReqChannelId": encryptValue(item["ReqChannelId"]),
-          "LeadSource": encryptValue(item["LeadSource"]),
-          "LeadSourceDesc": encryptValue(item["LeadSourceDesc"]),
-          "LeadSubSource": encryptValue(item["LeadSubSource"]),
-          "LeadSubSourceDesc": encryptValue(item["LeadSubSourceDesc"]),
-          "LeadAging": encryptValue(item["LeadAging"]),
-          "BusinessType": encryptValue(item["BusinessType"]),
-          "BusinessTypeDesc": encryptValue(item["BusinessTypeDesc"]),
-          "LeadRating": encryptValue(item["LeadRating"]),
-          "Breaking": encryptValue(item["Breaking"]),
-          "PrevPolicyNo": encryptValue(item["PrevPolicyNo"]),
-
-          // Useful extra fields for cards / renewals / future use
-          "PolicyEndDate": encryptValue(item["PolicyEndDate"]),
-          "SrvcFromDTim": encryptValue(item["SrvcFromDTim"]),
-          "SrvcComments": encryptValue(item["SrvcComments"]),
-          "RenewalPaymentLink": encryptValue(item["RenewalPaymentLink"]),
-          "LOBCode": encryptValue(item["LOBCode"]),
-          "ProdCode": encryptValue(item["ProdCode"]),
-          "AgentCode": encryptValue(item["AgentCode"]),
-          "AgentName": encryptValue(item["AgentName"]),
-          "CreatedBy": encryptValue(item["CreatedBy"]),
-          "CreateDTim": encryptValue(item["CreateDTim"]),
-          "UpdatedBy": encryptValue(item["UpdatedBy"]),
-          "UpdateDTim": encryptValue(item["UpdateDTim"]),
-          "Remark": encryptValue(item["Remark"]),
-
-          // Local status
-          "SyncStatus": CommonUtil.encryptIfNotEmpty("Complete"),
-        };
-
-        batch.delete(
-          "LeadDetails",
-          where: "SrvcReqDtlCode = ?",
-          whereArgs: [srvcReqDtlCode],
-        );
-
-        batch.insert(
-          "LeadDetails",
-          leadMap,
-          conflictAlgorithm: ConflictAlgorithm.replace,
-        );
-      }
-
-      await batch.commit(noResult: true);
-
-      final count = Sqflite.firstIntValue(
-        await db.rawQuery("SELECT COUNT(*) FROM LeadDetails"),
-      );
-
-      print("LeadDetails total after savegriddashboarddata = $count");
-
-      return true;
-    } catch (e, st) {
-      print("savegriddashboarddata error: $e");
-      print(st);
-      return false;
-    }
   }
 
   Future<List<DashboardDetailModel>> getDashboardDetailsFromDb({

@@ -18,6 +18,9 @@ class DashboardSummary {
   final int lostToCompetitionCount;
   final int notRespondingCount;
   final int notInterestedCount;
+  final double lostToCompetitionAmount;
+  final double notRespondingAmount;
+  final double notInterestedAmount;
 
   // Open sub status
   final int parkedCount;
@@ -28,6 +31,8 @@ class DashboardSummary {
   // Sales Closed sub status
   final int premiumCollectedCount;
   final int policyIssuedCount;
+  final double premiumCollectedAmount;
+  final double policyIssuedAmount;
 
   DashboardSummary({
     required this.totalLeads,
@@ -44,12 +49,18 @@ class DashboardSummary {
     this.lostToCompetitionCount = 0,
     this.notRespondingCount = 0,
     this.notInterestedCount = 0,
+    this.lostToCompetitionAmount = 0,
+    this.notRespondingAmount = 0,
+    this.notInterestedAmount = 0,
+
     this.parkedCount = 0,
     this.followUpCount = 0,
     this.parkedAmount = 0,
     this.followUpAmount = 0,
     this.premiumCollectedCount = 0,
     this.policyIssuedCount = 0,
+    this.premiumCollectedAmount = 0,
+    this.policyIssuedAmount = 0,
   });
 
   double _calculate(int value) {

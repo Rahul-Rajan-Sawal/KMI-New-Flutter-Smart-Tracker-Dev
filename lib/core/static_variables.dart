@@ -37,8 +37,7 @@ class StaticVariables {
       GetDashboardParam = "GetDashboardParam",
       GetLeadDataForUser = "GetLeadDataForUser",
       CreateLeadFromMob = "CreateLeadFromMob",
-      GetDataForDashboard = "GetDataForDashboard",
-      GetDashboardParam = "GetDashboardParam";
+      GetDataForDashboard = "GetDataForDashboard";
 
   static const String BridgeCallDtls = "BridgeCallDtls";
   static const String SearchLead = "SearchLead";

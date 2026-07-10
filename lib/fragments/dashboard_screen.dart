@@ -434,16 +434,28 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                 //     ),
                 //   ],
                 // ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _buildStatColumn("NOP", selectedCard.nop),
-                    _buildStatColumn("GWP(in Lacs)", selectedCard.gwp),
-                    _buildStatColumn("Percentage", selectedCard.percentage),
-                  ],
-                ),
-                // Radio btns
+                // Row(
+                //   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                //   children: [
+                //     _buildStatColumn("NOP", selectedCard.nop),
+                //     _buildStatColumn("GWP(in Lacs)", selectedCard.gwp),
+                //     _buildStatColumn("Percentage", selectedCard.percentage),
+                //   ],
+                // ),
+                _buildExpandedStatsBox(selectedCard),
+
                 const SizedBox(height: 12),
+                // Radio btns
+                Text(
+                  selectedMonthLabel,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF17479e),
+                  ),
+                ),
+
+                const SizedBox(height: 8),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -457,7 +469,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
           ),
         ),
 
-        const SizedBox(height: 16),
+        const SizedBox(height: 26),
 
         /// Mini Cards
         // Row(
@@ -487,28 +499,101 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
   Widget _buildSubStatusCards(DashboardSummary summary) {
     final selectedTitle = _selectedCard?.title ?? "";
 
+    // if (selectedTitle == "Lost") {
+    //   return Row(
+    //     children: [
+    //       Expanded(
+    //         child: _buildMiniCard(
+    //           "Lost to Competitor",
+    //           summary.lostToCompetitionCount.toString(),
+    //         ),
+    //       ),
+    //       const SizedBox(width: 8),
+    //       Expanded(
+    //         child: _buildMiniCard(
+    //           "Not Responding",
+    //           summary.notRespondingCount.toString(),
+    //         ),
+    //       ),
+    //       const SizedBox(width: 8),
+    //       Expanded(
+    //         child: _buildMiniCard(
+    //           "Not Interested",
+    //           summary.notInterestedCount.toString(),
+    //         ),
+    //       ),
+    //     ],
+    //   );
+    // }
+    // if (selectedTitle == "Lost") {
+    //   return Row(
+    //     children: [
+    //       Expanded(
+    //         child: _buildOpenLeadCard(
+    //           title: "Lost to Competitor",
+    //           nop: summary.lostToCompetitionCount.toString(),
+    //           gwp: CommonUtil.getValueInLakh(summary.lostToCompetitionAmount),
+    //         ),
+    //       ),
+    //       const SizedBox(width: 8),
+    //       Expanded(
+    //         child: _buildOpenLeadCard(
+    //           title: "Not Responding",
+    //           nop: summary.notRespondingCount.toString(),
+    //           gwp: CommonUtil.getValueInLakh(summary.notRespondingAmount),
+    //         ),
+    //       ),
+    //       const SizedBox(width: 8),
+    //       Expanded(
+    //         child: _buildOpenLeadCard(
+    //           title: "Not Interested",
+    //           nop: summary.notInterestedCount.toString(),
+    //           gwp: CommonUtil.getValueInLakh(summary.notInterestedAmount),
+    //         ),
+    //       ),
+    //     ],
+    //   );
+    // }
     if (selectedTitle == "Lost") {
-      return Row(
+      return Column(
         children: [
-          Expanded(
-            child: _buildMiniCard(
-              "Lost to Competitor",
-              summary.lostToCompetitionCount.toString(),
-            ),
+          Row(
+            children: [
+              SizedBox(width: 8),
+              Expanded(
+                child: _buildOpenLeadCard(
+                  title: "Lost to Competitor",
+                  nop: summary.lostToCompetitionCount.toString(),
+                  gwp: CommonUtil.getValueInLakh(
+                    summary.lostToCompetitionAmount,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 18),
+              Expanded(
+                child: _buildOpenLeadCard(
+                  title: "Not Responding",
+                  nop: summary.notRespondingCount.toString(),
+                  gwp: CommonUtil.getValueInLakh(summary.notRespondingAmount),
+                ),
+              ),
+              SizedBox(width: 8),
+            ],
           ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: _buildMiniCard(
-              "Not Responding",
-              summary.notRespondingCount.toString(),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: _buildMiniCard(
-              "Not Interested",
-              summary.notInterestedCount.toString(),
-            ),
+          const SizedBox(height: 18),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              return Center(
+                child: SizedBox(
+                  width: (constraints.maxWidth - 8) / 2,
+                  child: _buildOpenLeadCard(
+                    title: "Not Interested",
+                    nop: summary.notInterestedCount.toString(),
+                    gwp: CommonUtil.getValueInLakh(summary.notInterestedAmount),
+                  ),
+                ),
+              );
+            },
           ),
         ],
       );
@@ -553,20 +638,41 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
       );
     }
 
+    // if (selectedTitle == "Sale Closed") {
+    //   return Row(
+    //     children: [
+    //       Expanded(
+    //         child: _buildMiniCard(
+    //           "Premium Collected",
+    //           summary.premiumCollectedCount.toString(),
+    //         ),
+    //       ),
+    //       const SizedBox(width: 12),
+    //       Expanded(
+    //         child: _buildMiniCard(
+    //           "Policy Issued",
+    //           summary.policyIssuedCount.toString(),
+    //         ),
+    //       ),
+    //     ],
+    //   );
+    // }
     if (selectedTitle == "Sale Closed") {
       return Row(
         children: [
           Expanded(
-            child: _buildMiniCard(
-              "Premium Collected",
-              summary.premiumCollectedCount.toString(),
+            child: _buildOpenLeadCard(
+              title: "Premium Collected",
+              nop: summary.premiumCollectedCount.toString(),
+              gwp: CommonUtil.getValueInLakh(summary.premiumCollectedAmount),
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 8),
           Expanded(
-            child: _buildMiniCard(
-              "Policy Issued",
-              summary.policyIssuedCount.toString(),
+            child: _buildOpenLeadCard(
+              title: "Policy Issued",
+              nop: summary.policyIssuedCount.toString(),
+              gwp: CommonUtil.getValueInLakh(summary.policyIssuedAmount),
             ),
           ),
         ],
@@ -574,6 +680,93 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
     }
 
     return const SizedBox.shrink();
+  }
+
+  Widget _buildExpandedStatsBox(CardData selectedCard) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFFE9E9E9),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: const [
+              Expanded(
+                child: Text(
+                  "NOP",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF17479e),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Text(
+                  "GWP(In Lacs)",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF17479e),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Text(
+                  "Percentage",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF17479e),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  selectedCard.nop,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Text(
+                  selectedCard.gwp,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Text(
+                  selectedCard.percentage,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildStatColumn(String label, String value) {
