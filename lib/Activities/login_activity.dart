@@ -290,6 +290,9 @@ class _LoginActivityState extends State<LoginActivity> {
                           "UserId": CommonUtil.encryptIfNotEmpty(
                             jsonObject["UserId"].toString().toUpperCase(),
                           ),
+                          "MtFlag": CommonUtil.encryptIfNotEmpty(
+                            jsonObject["MtFlag"]?.toString() ?? "",
+                          ),
                           "Password": CommonUtil.encryptIfNotEmpty(
                             passwordController.text.trim(),
                           ),
@@ -361,11 +364,10 @@ class _LoginActivityState extends State<LoginActivity> {
                             message: "Syncing masters...",
                           );
 
-
-                          // call api for master data                       
+                          // call api for master data
                           final mastersSynced = await MastersMappingApi.call(
                             userId: userId,
-                           // LastSyncDate: DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now()),
+                            // LastSyncDate: DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now()),
                             //lastSyncDate: DateTime.now().toIso8601String(),
                           );
 

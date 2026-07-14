@@ -1,11 +1,14 @@
 import 'package:flutter_bottom_nav/common/common_util.dart';
 import 'package:flutter_bottom_nav/common/encryption_util.dart';
+import 'package:flutter_bottom_nav/core/apicall/async_get_team_dashboard_data.dart';
 import 'package:flutter_bottom_nav/core/apicall/get_dashbaord_data.dart';
 import 'package:flutter_bottom_nav/core/apicall/getdata_fordashboard.dart';
 import 'package:flutter_bottom_nav/core/static_variables.dart';
 import 'package:flutter_bottom_nav/database/database_helper.dart';
 import 'package:flutter_bottom_nav/models/Dashboard/dashboard_detail_model.dart';
 import 'package:flutter_bottom_nav/models/Dashboard/dashboard_summary_model.dart';
+import 'package:flutter_bottom_nav/models/filter_state.dart';
+import 'package:intl/intl.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
 
 class DashboardRepository {
@@ -30,6 +33,83 @@ class DashboardRepository {
     }
 
     return month;
+  }
+
+  String _filterValue(List<String> values) {
+    final cleaned = values
+        .map((e) => e.trim())
+        .where((e) => e.isNotEmpty && e.toLowerCase() != "all")
+        .toList();
+
+    return cleaned.join(",");
+  }
+
+  String _singleFilterValue(String? value) {
+    final cleaned = value?.trim() ?? "";
+
+    if (cleaned.isEmpty || cleaned.toLowerCase() == "all") {
+      return "";
+    }
+
+    return cleaned;
+  }
+
+  bool _matchesAny(
+    Map<String, dynamic> row,
+    String column,
+    List<String> values,
+  ) {
+    final cleanedValues = values
+        .map((e) => e.trim().toUpperCase())
+        .where((e) => e.isNotEmpty && e != "ALL")
+        .toList();
+
+    if (cleanedValues.isEmpty) return true;
+
+    final rowValue = row[column]?.toString().trim().toUpperCase() ?? "";
+
+    return cleanedValues.contains(rowValue);
+  }
+
+  bool _matchesSingle(Map<String, dynamic> row, String column, String? value) {
+    final cleanedValue = value?.trim().toUpperCase() ?? "";
+
+    if (cleanedValue.isEmpty || cleanedValue == "ALL") return true;
+
+    final rowValue = row[column]?.toString().trim().toUpperCase() ?? "";
+
+    return rowValue == cleanedValue;
+  }
+
+  bool _matchesSelfDashboardFilters(
+    Map<String, dynamic> row,
+    FilterState? filters,
+  ) {
+    if (filters == null) return true;
+
+    return _matchesAny(row, "Zone", filters.zone) &&
+        _matchesAny(row, "Region", filters.region) &&
+        _matchesAny(row, "SMBranch", filters.branch) &&
+        _matchesAny(row, "AgentCode", filters.agent) &&
+        _matchesAny(row, "LOBCode", filters.lob) &&
+        _matchesAny(row, "ProductGroup", filters.productGroup) &&
+        _matchesAny(row, "ProdCode", filters.product) &&
+        _matchesAny(row, "ProductSubCategory", filters.productSubCategory) &&
+        _matchesAny(row, "RenewalYearCount", filters.renewalYearCount) &&
+        _matchesAny(row, "NCBFlag", filters.ncb) &&
+        _matchesAny(row, "Preferred", filters.preferred) &&
+        _matchesSingle(row, "NILDep", filters.nilDep) &&
+        _matchesSingle(row, "Category", filters.categoryName) &&
+        _matchesSingle(row, "FuelType", filters.fuelType) &&
+        _matchesSingle(row, "VehicleType", filters.vehicleType) &&
+        _matchesSingle(row, "SeatingCapacity", filters.seatingCapacity) &&
+        _matchesSingle(row, "AgeGroup", filters.ageGroup) &&
+        _matchesSingle(row, "FamilySize", filters.familySize) &&
+        _matchesSingle(row, "SumInsuredBand", filters.sumInsuredBand) &&
+        _matchesSingle(row, "PreExiting", filters.preExisting) &&
+        _matchesSingle(row, "Occupancy", filters.occupancy) &&
+        _matchesSingle(row, "SumInsured", filters.sumInsured) &&
+        _matchesSingle(row, "LifeGroup", filters.lifeGroup);
   }
 
   Future<bool> isDataAvailable(String rmCode, String month) async {
@@ -86,6 +166,7 @@ class DashboardRepository {
   Future<bool> fetchAndStoreDashboard({
     required String userId,
     required String month,
+    FilterState? filters,
   }) async {
     try {
       final response = await GetDashbaordData.getdashboarddata(
@@ -207,17 +288,39 @@ class DashboardRepository {
 
         await batch.commit(noResult: true);
 
-        if (lastCreateDTime != null) {
-          await txn.update(
-            "iUser",
-            {
-              "DashboardUpdatedDate": EncryptionUtil.encrypt(lastCreateDTime!),
-            }, // lastCreateDTime},
-            where: "UserId = ?",
-            whereArgs: [
-              EncryptionUtil.encrypt(StaticVariables.mSAPCode.toUpperCase()),
-            ],
-          );
+        // if (lastCreateDTime != null) {
+        //   await txn.update(
+        //     "iUser",
+        //     {
+        //       "DashboardUpdatedDate": EncryptionUtil.encrypt(lastCreateDTime!),
+        //     }, // lastCreateDTime},
+        //     where: "UserId = ?",
+        //     whereArgs: [
+        //       EncryptionUtil.encrypt(StaticVariables.mSAPCode.toUpperCase()),
+        //     ],
+        //   );
+        // }
+        if (lastCreateDTime != null && lastCreateDTime!.trim().isNotEmpty) {
+          try {
+            final cleanDate = lastCreateDTime!.replaceAll("T", " ");
+            final parsedDate = DateFormat(
+              "yyyy-MM-dd HH:mm:ss.SSS",
+            ).parse(cleanDate);
+            final formattedDate = DateFormat(
+              "dd-MM-yyyy hh:mm a",
+            ).format(parsedDate);
+
+            await txn.update(
+              "iUser",
+              {"DashboardUpdatedDate": EncryptionUtil.encrypt(formattedDate)},
+              where: "UserId = ?",
+              whereArgs: [
+                EncryptionUtil.encrypt(StaticVariables.mSAPCode.toUpperCase()),
+              ],
+            );
+          } catch (e) {
+            print("Self dashboard date update error: $e");
+          }
         }
       });
 
@@ -257,6 +360,7 @@ class DashboardRepository {
     required String rmCode,
     required String month,
     bool forceRefresh = false,
+    FilterState? filters,
   }) async {
     final exists = await isDataAvailable(rmCode, month);
 
@@ -264,7 +368,11 @@ class DashboardRepository {
       return await getFromDb(rmCode, month);
     }
 
-    final success = await fetchAndStoreDashboard(userId: rmCode, month: month);
+    final success = await fetchAndStoreDashboard(
+      userId: rmCode,
+      month: month,
+      filters: filters,
+    );
 
     if (success) {
       return await getFromDb(rmCode, month);
@@ -273,20 +381,324 @@ class DashboardRepository {
     return [];
   }
 
+  Future<bool> isTeamDataAvailable(String rmCode, String month) async {
+    final db = await dbHelper.database;
+    final monthValue = _monthKey(month);
+
+    final result = await db.query(
+      "TeamDashboardData_Mob",
+      where: "RMCode = ? AND MonthYear = ?",
+      whereArgs: [rmCode, monthValue],
+    );
+
+    return result.isNotEmpty;
+  }
+
+  Future<List<Map<String, dynamic>>> getTeamFromDb(
+    String rmCode,
+    String month,
+  ) async {
+    final db = await dbHelper.database;
+    final monthValue = _monthKey(month);
+
+    return await db.query(
+      "TeamDashboardData_Mob",
+      where: "RMCode = ? AND MonthYear = ?",
+      whereArgs: [rmCode, monthValue],
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> loadTeamDashboard({
+    required String rmCode,
+    required String month,
+    bool forceRefresh = false,
+    FilterState? filters,
+  }) async {
+    final exists = await isTeamDataAvailable(rmCode, month);
+
+    if (exists && !forceRefresh) {
+      return await getTeamFromDb(rmCode, month);
+    }
+
+    final success = await fetchAndStoreTeamDashboard(
+      userId: rmCode,
+      month: month,
+      filters: filters,
+    );
+
+    if (success) {
+      return await getTeamFromDb(rmCode, month);
+    }
+
+    return [];
+  }
+
+  Future<bool> fetchAndStoreTeamDashboard({
+    required String userId,
+    required String month,
+    FilterState? filters,
+  }) async {
+    try {
+      final monthValue = _monthKey(month);
+      final appliedFilters = filters ?? const FilterState();
+
+      final response = await GetTeamDashboardData.getTeamDashboardData(
+        UserId: userId.toUpperCase(),
+        Period: monthValue,
+
+        Zone: _filterValue(appliedFilters.zone),
+        Region: _filterValue(appliedFilters.region),
+        Branch: _filterValue(appliedFilters.branch),
+        SMCode: _filterValue(appliedFilters.salesManager),
+        Agent: _filterValue(appliedFilters.agent),
+        Reference: _filterValue(appliedFilters.reference),
+
+        Lob: _filterValue(appliedFilters.lob),
+        ProductGroup: _filterValue(appliedFilters.productGroup),
+        Product: _filterValue(appliedFilters.product),
+        ProductSubCat: _filterValue(appliedFilters.productSubCategory),
+
+        RenewalYearCount: _filterValue(appliedFilters.renewalYearCount),
+        NCB: _filterValue(appliedFilters.ncb),
+        Prefered: _filterValue(appliedFilters.preferred),
+
+        NilDep: _singleFilterValue(appliedFilters.nilDep),
+        Category: _singleFilterValue(appliedFilters.categoryName),
+        FuelType: _singleFilterValue(appliedFilters.fuelType),
+        Make: _singleFilterValue(appliedFilters.make),
+        VehicleAgeGroup: _singleFilterValue(appliedFilters.vehicleAgeGrp),
+        GVW: _singleFilterValue(appliedFilters.gvw),
+        VehicleType: _singleFilterValue(appliedFilters.vehicleType),
+        SeatingCapacity: _singleFilterValue(appliedFilters.seatingCapacity),
+        AgeGroup: _singleFilterValue(appliedFilters.ageGroup),
+        FamilySize: _singleFilterValue(appliedFilters.familySize),
+        SumInsuredBand: _singleFilterValue(appliedFilters.sumInsuredBand),
+        PreExisting: _singleFilterValue(appliedFilters.preExisting),
+        Occupancy: _singleFilterValue(appliedFilters.occupancy),
+        SumInsured: _singleFilterValue(appliedFilters.sumInsured),
+        LifeGroup: _singleFilterValue(appliedFilters.lifeGroup),
+      );
+
+      print("Team Dashboard Repository Response: $response");
+
+      final List<dynamic>? tableList = response["Table"];
+
+      if (tableList == null || tableList.isEmpty) {
+        return false;
+      }
+
+      final db = await dbHelper.database;
+      String? lastCreateDTime;
+
+      await db.transaction((txn) async {
+        // Android deletes by RMCode only
+        await txn.delete(
+          "TeamDashboardData_Mob",
+          where: "RMCode = ?",
+          whereArgs: [userId.toUpperCase()],
+        );
+
+        final batch = txn.batch();
+
+        for (final item in tableList) {
+          lastCreateDTime = item["CreateDTime"]?.toString();
+
+          final dbMap = <String, dynamic>{
+            "RMCode": userId.toUpperCase(),
+            "UserId": item["UserId"]?.toString().toUpperCase(),
+            "TotalLeads": item["TotalLeads"],
+            "WIPLeads": item["WIPLeads"],
+            "LeadConverted": item["LeadConverted"],
+            "LeadLost": item["LeadLost"],
+            "Lead_Converted": item["Lead_Converted"],
+            "LeadType": item["LeadType"]?.toString().trim(),
+            "Premium_Collected": item["Premium_Collected"],
+            "Policy_Issued": item["Policy_Issued"],
+            "Call_Back": item["Call_Back"],
+            "Appointment_Fixed": item["Appointment_Fixed"],
+            "Non_Contactable": item["Non_Contactable"],
+            "Lost_To_Competition": item["Lost_To_Competition"],
+            "Customer_Not_Interested": item["Customer_Not_Interested"],
+            "Customer_Not_Responding": item["Customer_Not_Responding"],
+            "ParkLead": item["ParkLead"],
+            "FollowUp": item["FollowUp"],
+            "Activity": item["ActivityCode"],
+            "SubActivity": item["SubActivityCode"],
+            "ActivityCode": item["ActivityCode"],
+            "SubActivityCode": item["SubActivityCode"],
+            "Amount": item["Amount"],
+            "MonthYear": monthValue,
+            "SyncStatus": CommonUtil.encryptIfNotEmpty("Completed"),
+            "CreateDTime": item["CreateDTime"],
+          };
+
+          batch.insert(
+            "TeamDashboardData_Mob",
+            dbMap,
+            conflictAlgorithm: ConflictAlgorithm.replace,
+          );
+        }
+
+        await batch.commit(noResult: true);
+
+        if (lastCreateDTime != null && lastCreateDTime!.trim().isNotEmpty) {
+          try {
+            final cleanDate = lastCreateDTime!.replaceAll("T", " ");
+            final parsedDate = DateFormat(
+              "yyyy-MM-dd HH:mm:ss.SSS",
+            ).parse(cleanDate);
+
+            final formattedDate = DateFormat(
+              "dd-MM-yyyy hh:mm a",
+            ).format(parsedDate);
+
+            await txn.update(
+              "iUser",
+              {"DashboardUpdatedDate": EncryptionUtil.encrypt(formattedDate)},
+              where: "UserId = ?",
+              whereArgs: [
+                EncryptionUtil.encrypt(StaticVariables.mSAPCode.toUpperCase()),
+              ],
+            );
+          } catch (e) {
+            print("Team dashboard date update error: $e");
+          }
+        }
+      });
+
+      return true;
+    } catch (e, st) {
+      print("fetchAndStoreTeamDashboard error: $e");
+      print(st);
+      return false;
+    }
+  }
+
+  // Future<bool> fetchAndStoreTeamDashboard({
+  //   required String userId,
+  //   required String month,
+
+  // }) async {
+  //   try {
+  //     final monthValue = _monthKey(month);
+
+  //     final response = await GetTeamDashboardData.getTeamDashboardData(
+  //       UserId: userId.toUpperCase(),
+  //       Period: monthValue,
+  //     );
+
+  //     print("Team Dashboard Repository Response: $response");
+
+  //     final List<dynamic>? tableList = response["Table"];
+
+  //     if (tableList == null || tableList.isEmpty) {
+  //       return false;
+  //     }
+
+  //     final db = await dbHelper.database;
+  //     String? lastCreateDTime;
+
+  //     await db.transaction((txn) async {
+  //       // Android deletes by RMCode only
+  //       await txn.delete(
+  //         "TeamDashboardData_Mob",
+  //         where: "RMCode = ?",
+  //         whereArgs: [userId.toUpperCase()],
+  //       );
+
+  //       final batch = txn.batch();
+
+  //       for (final item in tableList) {
+  //         lastCreateDTime = item["CreateDTime"]?.toString();
+
+  //         final dbMap = <String, dynamic>{
+  //           "RMCode": userId.toUpperCase(),
+  //           "UserId": item["UserId"]?.toString().toUpperCase(),
+  //           "TotalLeads": item["TotalLeads"],
+  //           "WIPLeads": item["WIPLeads"],
+  //           "LeadConverted": item["LeadConverted"],
+  //           "LeadLost": item["LeadLost"],
+  //           "Lead_Converted": item["Lead_Converted"],
+  //           "LeadType": item["LeadType"]?.toString().trim(),
+  //           "Premium_Collected": item["Premium_Collected"],
+  //           "Policy_Issued": item["Policy_Issued"],
+  //           "Call_Back": item["Call_Back"],
+  //           "Appointment_Fixed": item["Appointment_Fixed"],
+  //           "Non_Contactable": item["Non_Contactable"],
+  //           "Lost_To_Competition": item["Lost_To_Competition"],
+  //           "Customer_Not_Interested": item["Customer_Not_Interested"],
+  //           "Customer_Not_Responding": item["Customer_Not_Responding"],
+  //           "ParkLead": item["ParkLead"],
+  //           "FollowUp": item["FollowUp"],
+  //           "Activity": item["ActivityCode"],
+  //           "SubActivity": item["SubActivityCode"],
+  //           "ActivityCode": item["ActivityCode"],
+  //           "SubActivityCode": item["SubActivityCode"],
+  //           "Amount": item["Amount"],
+  //           "MonthYear": monthValue,
+  //           "SyncStatus": CommonUtil.encryptIfNotEmpty("Completed"),
+  //           "CreateDTime": item["CreateDTime"],
+  //         };
+
+  //         batch.insert(
+  //           "TeamDashboardData_Mob",
+  //           dbMap,
+  //           conflictAlgorithm: ConflictAlgorithm.replace,
+  //         );
+  //       }
+
+  //       await batch.commit(noResult: true);
+
+  //       if (lastCreateDTime != null && lastCreateDTime!.trim().isNotEmpty) {
+  //         try {
+  //           final cleanDate = lastCreateDTime!.replaceAll("T", " ");
+  //           final parsedDate = DateFormat(
+  //             "yyyy-MM-dd HH:mm:ss.SSS",
+  //           ).parse(cleanDate);
+  //           final formattedDate = DateFormat(
+  //             "dd-MM-yyyy hh:mm a",
+  //           ).format(parsedDate);
+
+  //           await txn.update(
+  //             "iUser",
+  //             {"DashboardUpdatedDate": EncryptionUtil.encrypt(formattedDate)},
+  //             where: "UserId = ?",
+  //             whereArgs: [
+  //               EncryptionUtil.encrypt(StaticVariables.mSAPCode.toUpperCase()),
+  //             ],
+  //           );
+  //         } catch (e) {
+  //           print("Team dashboard date update error: $e");
+  //         }
+  //       }
+  //     });
+
+  //     return true;
+  //   } catch (e, st) {
+  //     print("fetchAndStoreTeamDashboard error: $e");
+  //     print(st);
+  //     return false;
+  //   }
+  // }
+
   Future<DashboardSummary> calculateSummary(
     String rmCode,
     String month, {
     int leadType = 1,
+    FilterState? filters,
   }) async {
     final db = await dbHelper.database;
 
     final monthValue = _monthKey(month);
 
-    final rows = await db.query(
+    final rawRows = await db.query(
       "DashboardData_Mob",
       where: "UserId = ?  and MothYear=?",
       whereArgs: [rmCode, monthValue],
     );
+    final rows = rawRows
+        .where((row) => _matchesSelfDashboardFilters(row, filters))
+        .toList();
 
     int iConvertedCount = 0;
     double iConvertedRS = 0;
@@ -444,6 +856,199 @@ class DashboardRepository {
       }
 
       // Open
+      if (![
+        "04",
+        "4",
+        "05",
+        "5",
+        "17",
+        "24",
+        "29",
+        "35",
+        "36",
+        "38",
+      ].contains(sActivity)) {
+        iOpenCount += wipLeads;
+        iOpenRS += amount;
+      }
+    }
+
+    return DashboardSummary(
+      totalLeads: totalLeads,
+      totalGwp: totalGwp,
+      convertedCount: iConvertedCount,
+      convertedAmount: iConvertedRS,
+      lostCount: iLostCount,
+      lostAmount: iLostRS,
+      openCount: iOpenCount,
+      openAmount: iOpenRS,
+      salesCloseCount: iSalesCloseCount,
+      salesCloseAmount: iSalesCloseRS,
+      lostToCompetitionCount: lostToCompetitionCount,
+      notRespondingCount: notRespondingCount,
+      notInterestedCount: notInterestedCount,
+      lostToCompetitionAmount: lostToCompetitionAmount,
+      notRespondingAmount: notRespondingAmount,
+      notInterestedAmount: notInterestedAmount,
+      parkedCount: parkedCount,
+      followUpCount: followUpCount,
+      parkedAmount: parkedAmount,
+      followUpAmount: followUpAmount,
+      premiumCollectedCount: premiumCollectedCount,
+      policyIssuedCount: policyIssuedCount,
+      premiumCollectedAmount: premiumCollectedAmount,
+      policyIssuedAmount: policyIssuedAmount,
+    );
+  }
+
+  Future<DashboardSummary> calculateTeamSummary(
+    String rmCode,
+    String month, {
+    int leadType = 1,
+  }) async {
+    final db = await dbHelper.database;
+    final monthValue = _monthKey(month);
+
+    final rows = await db.query(
+      "TeamDashboardData_Mob",
+      where: "RMCode = ? AND MonthYear = ?",
+      whereArgs: [rmCode, monthValue],
+    );
+
+    int iConvertedCount = 0;
+    double iConvertedRS = 0;
+
+    int iLostCount = 0;
+    double iLostRS = 0;
+
+    int iOpenCount = 0;
+    double iOpenRS = 0;
+
+    int iSalesCloseCount = 0;
+    double iSalesCloseRS = 0;
+
+    int totalLeads = 0;
+    double totalGwp = 0;
+
+    int lostToCompetitionCount = 0;
+    int notRespondingCount = 0;
+    int notInterestedCount = 0;
+
+    double lostToCompetitionAmount = 0;
+    double notRespondingAmount = 0;
+    double notInterestedAmount = 0;
+
+    int parkedCount = 0;
+    int followUpCount = 0;
+    double parkedAmount = 0;
+    double followUpAmount = 0;
+
+    int premiumCollectedCount = 0;
+    int policyIssuedCount = 0;
+    double premiumCollectedAmount = 0;
+    double policyIssuedAmount = 0;
+
+    for (final row in rows) {
+      final sActivity = (row["ActivityCode"] ?? row["Activity"] ?? "")
+          .toString();
+
+      final rowLeadType = (row["LeadType"] ?? "")
+          .toString()
+          .trim()
+          .toUpperCase();
+
+      if (leadType == 2 && rowLeadType == "L") {
+        continue;
+      }
+
+      if (leadType == 3 && rowLeadType != "L") {
+        continue;
+      }
+
+      final leadConverted =
+          int.tryParse(row["LeadConverted"]?.toString() ?? "0") ?? 0;
+
+      final leadLost = int.tryParse(row["LeadLost"]?.toString() ?? "0") ?? 0;
+
+      final wipLeads = int.tryParse(row["WIPLeads"]?.toString() ?? "0") ?? 0;
+
+      final amount = double.tryParse(row["Amount"]?.toString() ?? "0") ?? 0;
+
+      final lostToCompetition =
+          int.tryParse(row["Lost_To_Competition"]?.toString() ?? "0") ?? 0;
+
+      final notResponding =
+          int.tryParse(row["Customer_Not_Responding"]?.toString() ?? "0") ?? 0;
+
+      final notInterested =
+          int.tryParse(row["Customer_Not_Interested"]?.toString() ?? "0") ?? 0;
+
+      lostToCompetitionCount += lostToCompetition;
+      notRespondingCount += notResponding;
+      notInterestedCount += notInterested;
+
+      if (lostToCompetition > 0) {
+        lostToCompetitionAmount += amount;
+      }
+
+      if (notResponding > 0) {
+        notRespondingAmount += amount;
+      }
+
+      if (notInterested > 0) {
+        notInterestedAmount += amount;
+      }
+
+      final parkLead = int.tryParse(row["ParkLead"]?.toString() ?? "0") ?? 0;
+
+      final followUp = int.tryParse(row["FollowUp"]?.toString() ?? "0") ?? 0;
+
+      parkedCount += parkLead;
+      followUpCount += followUp;
+
+      if (parkLead > 0) {
+        parkedAmount += amount;
+      }
+
+      if (followUp > 0) {
+        followUpAmount += amount;
+      }
+
+      final premiumCollected =
+          int.tryParse(row["Premium_Collected"]?.toString() ?? "0") ?? 0;
+
+      final policyIssued =
+          int.tryParse(row["Policy_Issued"]?.toString() ?? "0") ?? 0;
+
+      premiumCollectedCount += premiumCollected;
+      policyIssuedCount += policyIssued;
+
+      if (premiumCollected > 0) {
+        premiumCollectedAmount += amount;
+      }
+
+      if (policyIssued > 0) {
+        policyIssuedAmount += amount;
+      }
+
+      totalLeads += leadConverted + leadLost + wipLeads;
+      totalGwp += amount;
+
+      if (["04", "4", "17", "35"].contains(sActivity)) {
+        iConvertedCount += leadConverted;
+        iConvertedRS += amount;
+      }
+
+      if (["05", "5", "24", "29", "38"].contains(sActivity)) {
+        iLostCount += leadLost;
+        iLostRS += amount;
+      }
+
+      if (sActivity == "36") {
+        iSalesCloseCount += wipLeads;
+        iSalesCloseRS += amount;
+      }
+
       if (![
         "04",
         "4",

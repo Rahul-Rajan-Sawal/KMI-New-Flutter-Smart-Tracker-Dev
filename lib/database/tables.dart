@@ -31,7 +31,8 @@ class DbTables {
           Ren_Rem_Days varchar,
           BridgeCallToTime varchar,
           BridgeCallFromTime varchar,
-          BridgeCallDownTime varchar
+          BridgeCallDownTime varchar,
+          MtFlag varchar
         );
   ''';
 
