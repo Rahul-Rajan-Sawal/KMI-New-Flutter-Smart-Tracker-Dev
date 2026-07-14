@@ -2,12 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bottom_nav/Activities/filter_activity.dart';
 import 'package:flutter_bottom_nav/Activities/view_details.dart';
 import 'package:flutter_bottom_nav/common/common_util.dart';
+import 'package:flutter_bottom_nav/core/apicall/async_getDashboardParam.dart';
 import 'package:flutter_bottom_nav/core/apicall/getdata_fordashboard.dart';
+import 'package:flutter_bottom_nav/core/repository/commonrepo.dart';
 import 'package:flutter_bottom_nav/core/static_variables.dart';
 import 'package:flutter_bottom_nav/database/database_helper.dart';
 import 'package:flutter_bottom_nav/models/Dashboard/dashboard_detail_model.dart';
 import 'package:flutter_bottom_nav/models/Dashboard/dashboard_summary_model.dart';
 import 'package:flutter_bottom_nav/models/dashboard_provider.dart';
+import 'package:flutter_bottom_nav/models/filter_provider.dart';
 import 'package:flutter_bottom_nav/models/route_observer.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -39,15 +42,48 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
   );
   String _dashboardType = "self";
 
+  bool _showDashboardTypeToggle = false;
+  bool _isOpeningDashboardFilter = false;
+
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
     // _printPath();
     // _fetchData();
-    _loadSession();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _handleDashboardLogic();
+    //_loadSession();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _setDashboardTypeFromLogin();
+      await _handleDashboardLogic();
+    });
+  }
+
+  Future<void> _setDashboardTypeFromLogin() async {
+    String mtFlag = StaticVariables.mTeam.trim();
+
+    if (mtFlag.isEmpty) {
+      final user = await DatabaseHelper.instance.getUserByUserId(
+        StaticVariables.mSAPCode,
+      );
+
+      final rawMtFlag = user?["MtFlag"]?.toString().trim() ?? "";
+      mtFlag = CommonUtil.decryptIfNotEmpty(rawMtFlag).trim();
+
+      if (mtFlag.isEmpty) {
+        mtFlag = rawMtFlag;
+      }
+    }
+
+    debugPrint("FINAL MtFlag used: $mtFlag");
+
+    setState(() {
+      if (mtFlag.toLowerCase() == "self" || mtFlag.isEmpty) {
+        _showDashboardTypeToggle = false;
+        _dashboardType = "self";
+      } else {
+        _showDashboardTypeToggle = true;
+        _dashboardType = "team";
+      }
     });
   }
 
@@ -66,6 +102,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
   @override
   void didPopNext() {
     super.didPopNext();
+    if (_isOpeningDashboardFilter) return;
+
     _handleDashboardLogic();
   }
 
@@ -199,8 +237,30 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
     print("========== END LEAD DETAILS ==========");
   }
 
+  // Future<void> _handleDashboardLogic() async {
+  //   await _callDashboardData(forceRefresh: false);
+  // }
   Future<void> _handleDashboardLogic() async {
-    await _callDashboardData(forceRefresh: false);
+    if (_dashboardType.toLowerCase() == "team") {
+      await _callTeamDashboardData(forceRefresh: false);
+    } else {
+      await _callDashboardData(forceRefresh: false);
+    }
+  }
+
+  Future<void> _callTeamDashboardData({required bool forceRefresh}) async {
+    final selectedLeadType = ref.read(dashboardLeadTypeProvider);
+
+    await ref
+        .read(dashboardProvider.notifier)
+        .loadTeamDashboard(
+          rmCode: StaticVariables.mSAPCode.toUpperCase(),
+          month: currentMonthParam,
+          forceRefresh: forceRefresh,
+          leadType: selectedLeadType,
+        );
+
+    await _loadSession();
   }
 
   String get selectedMonthLabel {
@@ -325,8 +385,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildTopCard(),
+                if (_showDashboardTypeToggle) _buildDashboardTypeToggle(),
                 _buildRefreshCard(),
-
+                const SizedBox(height: 5),
                 if (_selectedCard == null) ...[
                   _buildStatusCard(summary), // 👈 PASS SUMMARY
                   const SizedBox(height: 12),
@@ -488,7 +549,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
         // ],
         // const SizedBox(height: 16),
         // _buildRecyclerGrid(),
-        if (_selectedCard?.title == "Open") ...[
+        if (_dashboardType.toLowerCase() == "self" &&
+            _selectedCard?.title == "Open") ...[
           const SizedBox(height: 16),
           _buildRecyclerGrid(),
         ],
@@ -1470,6 +1532,82 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
   // }
 
   //card updeated By Rahul
+
+  Widget _buildDashboardTypeToggle() {
+    final isSelf = _dashboardType.toLowerCase() == "self";
+
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xFF17479e)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: InkWell(
+              onTap: () => _changeDashboardType("self"),
+              borderRadius: BorderRadius.circular(20),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                decoration: BoxDecoration(
+                  color: isSelf ? const Color(0xFF17479e) : Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  "Self Dashboard",
+                  style: TextStyle(
+                    color: isSelf ? Colors.white : const Color(0xFF17479e),
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Expanded(
+            child: InkWell(
+              onTap: () => _changeDashboardType("team"),
+              borderRadius: BorderRadius.circular(20),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                decoration: BoxDecoration(
+                  color: !isSelf ? const Color(0xFF17479e) : Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  "Team Dashboard",
+                  style: TextStyle(
+                    color: !isSelf ? Colors.white : const Color(0xFF17479e),
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _changeDashboardType(String type) async {
+    if (_dashboardType.toLowerCase() == type.toLowerCase()) return;
+
+    setState(() {
+      _dashboardType = type;
+      _selectedCard = null;
+      _isGridFilterApplied = false;
+      _gridFilteredList.clear();
+    });
+
+    ref.read(dashboardDetailsProvider.notifier).state = [];
+
+    await _handleDashboardLogic();
+  }
+
   Widget _buildTopCard() {
     return Card(
       color: const Color(0xFFE9E9E9),
@@ -1693,7 +1831,16 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                         rmCode: StaticVariables.mSAPCode.toUpperCase(),
                         month: currentMonthParam,
                         leadType: newValue,
+                        isTeam: _dashboardType.toLowerCase() == "team",
                       );
+
+                  // await ref
+                  //     .read(dashboardProvider.notifier)
+                  //     .changeLeadType(
+                  //       rmCode: StaticVariables.mSAPCode.toUpperCase(),
+                  //       month: currentMonthParam,
+                  //       leadType: newValue,
+                  //     );
                   // if (_selectedCard != null) {
                   //   await ref
                   //       .read(dashboardProvider.notifier)
@@ -1712,7 +1859,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                     _gridFilteredList.clear();
                   });
 
-                  if (_selectedCard != null) {
+                  if (_dashboardType.toLowerCase() == "self" &&
+                      _selectedCard?.title == "Open") {
                     await ref
                         .read(dashboardProvider.notifier)
                         .loadDashboardDetails(
@@ -1722,6 +1870,16 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                           leadType: newValue,
                         );
                   }
+                  // if (_selectedCard != null) {
+                  //   await ref
+                  //       .read(dashboardProvider.notifier)
+                  //       .loadDashboardDetails(
+                  //         rmCode: StaticVariables.mSAPCode.toUpperCase(),
+                  //         month: currentMonthParam,
+                  //         status: _selectedCard!.title,
+                  //         leadType: newValue,
+                  //       );
+                  // }
                 },
               ),
             ),
@@ -1957,6 +2115,26 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
           //     _selectedCard = card;
           //   });
           // },
+          // onTap: () async {
+          //   setState(() {
+          //     _selectedCard = card;
+          //     _isGridFilterApplied = false;
+          //     _gridFilteredList.clear();
+          //   });
+
+          //   final selectedLeadType = ref.read(dashboardLeadTypeProvider);
+
+          //   await ref
+          //       .read(dashboardProvider.notifier)
+          //       .loadDashboardActivityDetails(
+          //         rmCode: StaticVariables.mSAPCode.toUpperCase(),
+          //         month: currentMonthParam,
+          //         activityCode: getActivityCodeFromStatus(card.title),
+          //         subActivityCode: "",
+          //         statusFlag: getFlagFromStatus(card.title),
+          //         leadType: selectedLeadType,
+          //       );
+          // },
           onTap: () async {
             setState(() {
               _selectedCard = card;
@@ -1964,18 +2142,23 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
               _gridFilteredList.clear();
             });
 
+            ref.read(dashboardDetailsProvider.notifier).state = [];
+
             final selectedLeadType = ref.read(dashboardLeadTypeProvider);
 
-            await ref
-                .read(dashboardProvider.notifier)
-                .loadDashboardActivityDetails(
-                  rmCode: StaticVariables.mSAPCode.toUpperCase(),
-                  month: currentMonthParam,
-                  activityCode: getActivityCodeFromStatus(card.title),
-                  subActivityCode: "",
-                  statusFlag: getFlagFromStatus(card.title),
-                  leadType: selectedLeadType,
-                );
+            if (_dashboardType.toLowerCase() == "self" &&
+                card.title == "Open") {
+              await ref
+                  .read(dashboardProvider.notifier)
+                  .loadDashboardActivityDetails(
+                    rmCode: StaticVariables.mSAPCode.toUpperCase(),
+                    month: currentMonthParam,
+                    activityCode: getActivityCodeFromStatus(card.title),
+                    subActivityCode: "",
+                    statusFlag: getFlagFromStatus(card.title),
+                    leadType: selectedLeadType,
+                  );
+            }
           },
 
           child: _buildCard(card),
@@ -2002,6 +2185,18 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
 
   // }
 
+  // Future<void> _refreshData() async {
+  //   if (!mounted) return;
+
+  //   Fluttertoast.showToast(
+  //     msg: "Refreshing dashboard...",
+  //     toastLength: Toast.LENGTH_SHORT,
+  //     gravity: ToastGravity.SNACKBAR,
+  //   );
+
+  //   await _callDashboardData(forceRefresh: true);
+  // }
+
   Future<void> _refreshData() async {
     if (!mounted) return;
 
@@ -2011,14 +2206,95 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
       gravity: ToastGravity.SNACKBAR,
     );
 
-    await _callDashboardData(forceRefresh: true);
+    if (_dashboardType.toLowerCase() == "team") {
+      await _callTeamDashboardData(forceRefresh: true);
+    } else {
+      await _callDashboardData(forceRefresh: true);
+    }
   }
 
-  void _onFilterClick() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const FilterActivity()),
+  void _applySelectedPeriodFromFilter() {
+    final filterState = ref.read(filterProvider);
+
+    if (filterState.period.isEmpty) return;
+
+    try {
+      final selectedPeriod = filterState.period.first;
+      final parsedDate = DateFormat("MMMM yyyy").parse(selectedPeriod);
+
+      setState(() {
+        _selectedMonth = DateTime(parsedDate.year, parsedDate.month, 1);
+      });
+    } catch (e) {
+      debugPrint("Dashboard period parse error: $e");
+    }
+  }
+
+  // void _onFilterClick() {
+  //   Navigator.push(
+  //     context,
+  //     MaterialPageRoute(builder: (context) => const FilterActivity()),
+  //   );
+  // }
+
+  Future<void> _onFilterClick() async {
+    _isOpeningDashboardFilter = true;
+
+    final year = _selectedMonth.year.toString();
+    final month = _selectedMonth.month.toString().padLeft(2, "0");
+
+    final filterType = _dashboardType.toLowerCase() == "team" ? "Team" : "Self";
+
+    final response = await GetDashboardParamApi.getData(
+      sapCode: StaticVariables.mSAPCode,
+      branchCode: '',
+      smCode: '',
+      agentCode: '',
+      flag: 'ZRB',
+      filterType: filterType,
+      year: year,
+      month: month,
     );
+
+    await CommonRepo().saveZoneRegionBranch(
+      response: response,
+      year: year,
+      month: month,
+    );
+
+    if (!mounted) return;
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => FilterActivity(
+          userId: StaticVariables.mSAPCode,
+          year: _selectedMonth.year.toString(),
+          month: _selectedMonth.month.toString().padLeft(2, "0"),
+          isTeam: _dashboardType.toLowerCase() == "team",
+        ),
+      ),
+    );
+
+    _isOpeningDashboardFilter = false;
+
+    if (result == true) {
+      _applySelectedPeriodFromFilter();
+
+      setState(() {
+        _selectedCard = null;
+        _isGridFilterApplied = false;
+        _gridFilteredList.clear();
+      });
+
+      ref.read(dashboardDetailsProvider.notifier).state = [];
+
+      if (_dashboardType.toLowerCase() == "team") {
+        await _callTeamDashboardData(forceRefresh: true);
+      } else {
+        await _callDashboardData(forceRefresh: false);
+      }
+      //await _refreshData();
+    }
   }
 }
 

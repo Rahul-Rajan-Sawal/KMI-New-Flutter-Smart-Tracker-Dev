@@ -719,7 +719,79 @@ class ApiRequestBuilder {
     };
   }
 
-   static Map<String, dynamic> CreateLeadFromMob({
+  static Map<String, dynamic> getTeamsDashboard({
+    required String UserId,
+    required String Period,
+    required String Zone,
+    required String Region,
+    required String Branch,
+    required String SMCode,
+    required String Agent,
+    required String Reference,
+    required String Lob,
+    required String ProductGroup,
+    required String Product,
+    required String ProductSubCat,
+    required String RenewalYearCount,
+    required String NCB,
+    required String Prefered,
+    required String NilDep,
+    required String Category,
+    required String FuelType,
+    required String Make,
+    required String VehicleAgeGroup,
+    required String GVW,
+    required String VehicleType,
+    required String SeatingCapacity,
+    required String AgeGroup,
+    required String FamilySize,
+    required String SumInsuredBand,
+    required String PreExisting,
+    required String Occupancy,
+    required String SumInsured,
+    required String LifeGroup,
+    required String CallerId,
+    required String CallerPass,
+    required String TokenId,
+  }) {
+    return {
+      "UserId": UserId,
+      "Period": Period,
+      "Zone": Zone,
+      "Region": Region,
+      "Branch": Branch,
+      "SMCode": SMCode,
+      "Agent": Agent,
+      "Reference": Reference,
+      "Lob": Lob,
+      "ProductGroup": ProductGroup,
+      "Product": Product,
+      "ProductSubCat": ProductSubCat,
+      "RenewalYearCount": RenewalYearCount,
+      "NCB": NCB,
+      "Prefered": Prefered,
+      "NilDep": NilDep,
+      "Category": Category,
+      "FuelType": FuelType,
+      "Make": Make,
+      "VehicleAgeGroup": VehicleAgeGroup,
+      "GVW": GVW,
+      "VehicleType": VehicleType,
+      "SeatingCapacity": SeatingCapacity,
+      "AgeGroup": AgeGroup,
+      "FamilySize": FamilySize,
+      "SumInsuredBand": SumInsuredBand,
+      "PreExisting": PreExisting,
+      "Occupancy": Occupancy,
+      "SumInsured": SumInsured,
+      "LifeGroup": LifeGroup,
+      "CallerId": CallerId,
+      "CallerPass": CallerPass,
+      "TokenId": TokenId,
+    };
+  }
+
+  static Map<String, dynamic> CreateLeadFromMob({
     required String SAPCode,
     required String reqChannelId,
     required String leadSource,
@@ -772,5 +844,4 @@ class ApiRequestBuilder {
       "TokenId": TokenId,
     };
   }
-
 }

@@ -1,6 +1,7 @@
 import 'package:flutter_bottom_nav/core/repository/dashboard_repository.dart';
 import 'package:flutter_bottom_nav/models/Dashboard/dashboard_detail_model.dart';
 import 'package:flutter_bottom_nav/models/Dashboard/dashboard_summary_model.dart';
+import 'package:flutter_bottom_nav/models/filter_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../database/database_helper.dart';
 
@@ -45,6 +46,7 @@ class DashboardNotifier extends StateNotifier<AsyncValue<DashboardSummary>> {
   }) async {
     try {
       state = const AsyncValue.loading();
+      final filters = ref.read(filterProvider);
 
       ref.read(dashboardDetailsProvider.notifier).state = [];
 
@@ -52,9 +54,41 @@ class DashboardNotifier extends StateNotifier<AsyncValue<DashboardSummary>> {
         rmCode: rmCode,
         month: month,
         forceRefresh: forceRefresh,
+        filters: filters,
       );
 
       final summary = await repository.calculateSummary(
+        rmCode,
+        month,
+        leadType: leadType,
+        filters: filters,
+      );
+
+      state = AsyncValue.data(summary);
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+    }
+  }
+
+  Future<void> loadTeamDashboard({
+    required String rmCode,
+    required String month,
+    bool forceRefresh = false,
+    int leadType = 1,
+  }) async {
+    try {
+      state = const AsyncValue.loading();
+      final filters = ref.read(filterProvider);
+      ref.read(dashboardDetailsProvider.notifier).state = [];
+
+      await repository.loadTeamDashboard(
+        rmCode: rmCode,
+        month: month,
+        forceRefresh: forceRefresh,
+        filters:filters,
+      );
+
+      final summary = await repository.calculateTeamSummary(
         rmCode,
         month,
         leadType: leadType,
@@ -71,19 +105,49 @@ class DashboardNotifier extends StateNotifier<AsyncValue<DashboardSummary>> {
   ///
   /// Important:
   /// Do not set loading here.
+  // Future<void> changeLeadType({
+  //   required String rmCode,
+  //   required String month,
+  //   required int leadType,
+  // }) async {
+  //   try {
+  //     ref.read(dashboardDetailsProvider.notifier).state = [];
+
+  //     final summary = await repository.calculateSummary(
+  //       rmCode,
+  //       month,
+  //       leadType: leadType,
+  //     );
+
+  //     state = AsyncValue.data(summary);
+  //   } catch (e, st) {
+  //     state = AsyncValue.error(e, st);
+  //   }
+  // }
+
   Future<void> changeLeadType({
     required String rmCode,
     required String month,
     required int leadType,
+    bool isTeam = false,
   }) async {
     try {
+       final filters = ref.read(filterProvider);
       ref.read(dashboardDetailsProvider.notifier).state = [];
 
-      final summary = await repository.calculateSummary(
-        rmCode,
-        month,
-        leadType: leadType,
-      );
+      final summary = isTeam
+          ? await repository.calculateTeamSummary(
+              rmCode,
+              month,
+              leadType: leadType,
+              
+            )
+          : await repository.calculateSummary(
+              rmCode,
+              month,
+              leadType: leadType,
+              filters: filters,
+            );
 
       state = AsyncValue.data(summary);
     } catch (e, st) {

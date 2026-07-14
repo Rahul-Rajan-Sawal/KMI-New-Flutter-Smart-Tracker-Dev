@@ -8,7 +8,7 @@ class StaticVariables {
   //     "https://iceservices.brobotinsurance.com/RGI_LMS_WRAPERAPI/api/lms";
   //      static const String ContentURL = "https://iceservices.reliancegeneral.co.in/RGI_LMS_WRAPERAPI/mFiles/";
 
-  // static const String hostName = "iceservices.brobotinsurance.com";
+  //static const String hostName = "iceservices.brobotinsurance.com";
 
   // BaseUrl and HostName For UAT
   static const String baseUrl =
@@ -37,7 +37,8 @@ class StaticVariables {
       GetDashboardParam = "GetDashboardParam",
       GetLeadDataForUser = "GetLeadDataForUser",
       CreateLeadFromMob = "CreateLeadFromMob",
-      GetDataForDashboard = "GetDataForDashboard";
+      GetDataForDashboard = "GetDataForDashboard",
+      GetTeamsDashboard = "GetTeamsDashboard";
 
   static const String BridgeCallDtls = "BridgeCallDtls";
   static const String SearchLead = "SearchLead";
