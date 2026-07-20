@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_bottom_nav/common/encryption_util.dart';
 import 'package:flutter_bottom_nav/core/apicall/async_updateactivity.dart';
+import 'package:flutter_bottom_nav/core/apicall/getLastActivityForLead.dart';
 import 'package:flutter_bottom_nav/core/repository/activity_offline_repository.dart';
 import 'package:flutter_bottom_nav/database/database_helper.dart';
 import 'package:flutter_bottom_nav/models/UpdateActivity/update_activity_payload.dart';
@@ -711,6 +712,136 @@ class UpdateActivitySaveRepository {
     return _decrypt(rows.first['CltCode']).trim();
   }
 
+  //new added 14 July 2026
+  void _addLegacyTrackerColumns({
+    required UpdateActivityPayload payload,
+    required void Function(String column, dynamic value) addEncryptedValue,
+  }) {
+    final fields = payload.activityFields;
+
+    String value(String key) {
+      return fields[key]?.toString().trim() ?? '';
+    }
+
+    switch (payload.normalizedActivityCode) {
+      // RQ17 + Lead Source 37
+      case '16':
+        addEncryptedValue('ddlAct16Subreason', value('SubReason'));
+
+        addEncryptedValue('txt416', value('Reason'));
+
+        addEncryptedValue('txtAD16', value('AppointmentDate'));
+
+        addEncryptedValue('txtPN16', value('PhoneNumber'));
+
+        addEncryptedValue('txt316', value('AppointmentAddrss'));
+
+        addEncryptedValue('ddlMakeModel516', value('__MakenModelDescription'));
+
+        addEncryptedValue('ddlModel616', value('__ModelValueDescription'));
+
+        addEncryptedValue('txt716', value('ExpiryDate'));
+
+        addEncryptedValue('txt816', value('RegistrationNo'));
+        break;
+
+      case '17':
+        // Android does not use additional legacy aliases
+        // for Activity 17.
+        break;
+
+      case '18':
+        addEncryptedValue(
+          'ddlAppReasonTrack5',
+          value('__AppReasonDescription'),
+        );
+
+        addEncryptedValue('txtReason5', value('Reason'));
+        break;
+
+      case '19':
+        addEncryptedValue('txtCallBakDateTime19', value('CallBackDate'));
+
+        addEncryptedValue('txtPN19', value('PhoneNumber'));
+
+        addEncryptedValue('txt319', value('AppointmentAddrss'));
+        break;
+
+      // RQ17 + Lead Source 29
+      case '20':
+        addEncryptedValue('txtRMSAppointmentDate', value('AppointmentDate'));
+        break;
+
+      case '21':
+        addEncryptedValue('CallBackDateRenewal', value('CallBackDate'));
+
+        addEncryptedValue('txtRMSCallBackDate', value('CallBackDate'));
+        break;
+
+      case '22':
+        addEncryptedValue(
+          'ddlRMSNonContactableReason',
+          value('__NonConResDescription'),
+        );
+        break;
+
+      case '23':
+        addEncryptedValue('txtRMSChequeNo', value('ChequeNo'));
+        break;
+
+      case '24':
+        addEncryptedValue(
+          'ddlRMSRenewalLeadLostReason',
+          value('__RenewalLeadLostReasonDescription'),
+        );
+        break;
+
+      case '25':
+        addEncryptedValue(
+          'ddlRMSPolicyAlreadyRenewedReason',
+          value('__PolicyAlreadyRenewedReasonDescription'),
+        );
+        break;
+
+      case '26':
+        // The Flutter form already saves directly into
+        // txtRMSMobileNo, so no extra alias is required.
+        break;
+
+      // RQ11 + Lead Source 40
+      case '27':
+        addEncryptedValue('txtAppointmentDate27', value('AppointmentDate'));
+        break;
+
+      case '28':
+        addEncryptedValue('txtRescheduletDate28', value('RescheduleDate'));
+        break;
+
+      case '29':
+        addEncryptedValue(
+          'ddlAppReasonTrack29',
+          value('__LcReasonDescription'),
+        );
+        break;
+
+      case '30':
+        addEncryptedValue('txtPolicyNo30', value('ProposalNo'));
+        break;
+
+      case '31':
+        addEncryptedValue('txtParkedLead31', value('ParkedLeadDateTime'));
+        break;
+
+      case '32':
+        addEncryptedValue('txtFollowup32', value('FollowupDt'));
+        break;
+
+      case '33':
+        addEncryptedValue('txtQutation33', value('QutationDt'));
+        break;
+    }
+  }
+
   Future<Map<String, dynamic>> _buildTrackerData({
     required DatabaseExecutor executor,
     required String trackerTable,
@@ -774,15 +905,34 @@ class UpdateActivitySaveRepository {
     addEncryptedValue('IsActive', 'Y');
 
     // Activity-specific fields coming from the registry payload.
+    // for (final entry in payload.activityFields.entries) {
+    //   final columnName = entry.key.trim();
+
+    //   if (columnName.isEmpty) {
+    //     continue;
+    //   }
+
+    //   addEncryptedValue(columnName, entry.value);
+    // }
+
+    //added on 14 july 2026
     for (final entry in payload.activityFields.entries) {
       final columnName = entry.key.trim();
 
-      if (columnName.isEmpty) {
+      // Helper values beginning with __ are only used
+      // for creating legacy dropdown columns.
+      if (columnName.isEmpty || columnName.startsWith('__')) {
         continue;
       }
 
       addEncryptedValue(columnName, entry.value);
     }
+
+    // Add the old Android-compatible tracker columns.
+    _addLegacyTrackerColumns(
+      payload: payload,
+      addEncryptedValue: addEncryptedValue,
+    );
 
     return trackerData;
   }
@@ -828,6 +978,58 @@ class UpdateActivitySaveRepository {
       case '30':
       case '35':
         return 'Lead Converted';
+
+      default:
+        return null;
+    }
+  }
+
+  String _normalizeActivityCode(String activityCode) {
+    final cleanedCode = activityCode.trim();
+
+    if (cleanedCode.isEmpty) {
+      return '';
+    }
+
+    final numericCode = int.tryParse(cleanedCode);
+
+    // Converts 04 to 4 and 05 to 5.
+    return numericCode?.toString() ?? cleanedCode;
+  }
+
+  String? _getBlockedExistingLeadStatus(String activityStatus) {
+    final cleanedStatus = activityStatus.trim();
+
+    if (cleanedStatus.isEmpty) {
+      return null;
+    }
+
+    final statusText = cleanedStatus.toLowerCase();
+
+    // Handle description values, if the description is stored.
+    if (statusText == 'lead converted') {
+      return 'Lead Converted';
+    }
+
+    if (statusText == 'lead lost' || statusText == 'renewal lead lost') {
+      return 'Lead Lost';
+    }
+
+    final activityCode = _normalizeActivityCode(cleanedStatus);
+
+    switch (activityCode) {
+      // Android Lead Converted blocking codes.
+      case '4':
+      case '17':
+      case '30':
+        return 'Lead Converted';
+
+      // Android Lead Lost blocking codes.
+      case '5':
+      case '18':
+      case '24':
+      case '29':
+        return 'Lead Lost';
 
       default:
         return null;
@@ -1243,6 +1445,305 @@ class UpdateActivitySaveRepository {
     return _decrypt(rows.first['ActivityStatus']).trim();
   }
 
+  Future<Map<String, dynamic>?> fetchLatestActivityFromServer({
+    required String leadId,
+    required String sapCode,
+  }) async {
+    final cleanedLeadId = leadId.trim();
+    final cleanedSapCode = sapCode.trim();
+
+    if (cleanedLeadId.isEmpty || cleanedSapCode.isEmpty) {
+      return null;
+    }
+
+    try {
+      final response = await GetLastActivityForLeadApi.getData(
+        SAPCode: cleanedSapCode,
+        SrvcReqDtlCode: cleanedLeadId,
+      );
+
+      // if (response == null) {
+      //   return null;
+      // }
+
+      final tableData = response['Table'];
+
+      if (tableData is! List || tableData.isEmpty) {
+        print('Latest Activity API returned no data.');
+        return null;
+      }
+
+      final firstRow = tableData.first;
+
+      if (firstRow is! Map) {
+        return null;
+      }
+
+      final latestActivity = Map<String, dynamic>.from(firstRow);
+
+      print(
+        'LATEST ACTIVITY FROM SERVER: '
+        '${latestActivity['ActivityCode']} / '
+        '${latestActivity['SubActivityCode']}',
+      );
+
+      return latestActivity;
+    } catch (error, stackTrace) {
+      print('Latest Activity API failed: $error');
+      print(stackTrace);
+
+      // The screen can continue using local ActivityStatus.
+      return null;
+    }
+  }
+
+  Future<void> saveLatestActivityToLocalDb({
+    required String leadId,
+    String tempLeadId = '',
+    required Map<String, dynamic> latestActivity,
+  }) async {
+    final cleanedLeadId = leadId.trim();
+
+    if (cleanedLeadId.isEmpty || latestActivity.isEmpty) {
+      return;
+    }
+
+    try {
+      final db = await DatabaseHelper.instance.database;
+
+      final leadTable = await _findExistingTable(db, [
+        'LeadDetails',
+        'Tbl_LeadDetails',
+      ]);
+
+      final trackerTable = await _findExistingTable(db, [
+        'LMSLeadActivityTracker',
+      ]);
+
+      final resolvedLeadId = await _resolveLeadId(
+        db: db,
+        leadTable: leadTable,
+        leadId: cleanedLeadId,
+        tempLeadId: tempLeadId.trim(),
+      );
+
+      final activityCode =
+          latestActivity['ActivityCode']?.toString().trim() ?? '';
+
+      final activityStatus =
+          latestActivity['ActivityStatus']?.toString().trim() ?? '';
+
+      final subActivityCode =
+          latestActivity['SubActivityCode']?.toString().trim() ?? '';
+
+      final trackerRemark =
+          latestActivity['TrackerRemark']?.toString().trim() ??
+          latestActivity['Remark']?.toString().trim() ??
+          '';
+
+      final createDateTime =
+          latestActivity['CreateDTim']?.toString().trim() ?? '';
+
+      await db.transaction((transaction) async {
+        await transaction.update(
+          leadTable,
+          {
+            'ActivityStatus': _encrypt(
+              activityStatus.isNotEmpty ? activityStatus : activityCode,
+            ),
+            'SyncStatus': _encrypt('Complete'),
+          },
+          where: 'SrvcReqDtlCode = ?',
+          whereArgs: [_encrypt(resolvedLeadId)],
+        );
+
+        await transaction.delete(
+          trackerTable,
+          where: 'SrvcReqDtlCode = ?',
+          whereArgs: [_encrypt(resolvedLeadId)],
+        );
+
+        await transaction.insert(trackerTable, {
+          'SrvcReqDtlCode': _encrypt(resolvedLeadId),
+          'ActivityCode': _encrypt(activityCode),
+          'SubActivityCode': _encrypt(subActivityCode),
+          'Remark': _encrypt(trackerRemark),
+          'CreateDTim': _encrypt(createDateTime),
+          'SyncStatus': _encrypt('Success'),
+        });
+      });
+
+      print(
+        'LATEST ACTIVITY SAVED LOCALLY: '
+        'Lead=$resolvedLeadId, '
+        'Activity=$activityCode, '
+        'SubActivity=$subActivityCode',
+      );
+    } catch (error, stackTrace) {
+      print('Saving latest activity locally failed: $error');
+      print(stackTrace);
+
+      // The screen will continue using the existing local activity.
+    }
+  }
+
+  Future<Map<String, dynamic>?> refreshLatestActivityForLead({
+    required String leadId,
+    String tempLeadId = '',
+    required String sapCode,
+  }) async {
+    final latestActivity = await fetchLatestActivityFromServer(
+      leadId: leadId,
+      sapCode: sapCode,
+    );
+
+    if (latestActivity == null) {
+      print(
+        'LATEST ACTIVITY REFRESH SKIPPED: '
+        'Server data is not available.',
+      );
+
+      return null;
+    }
+
+    await saveLatestActivityToLocalDb(
+      leadId: leadId,
+      tempLeadId: tempLeadId,
+      latestActivity: latestActivity,
+    );
+
+    return latestActivity;
+  }
+
+  Future<Map<String, String>> getCurrentActivitySelectionForLead({
+    required String leadId,
+    String tempLeadId = '',
+  }) async {
+    final cleanedLeadId = leadId.trim();
+
+    if (cleanedLeadId.isEmpty) {
+      return {'activityCode': '', 'subActivityCode': ''};
+    }
+
+    try {
+      final db = await DatabaseHelper.instance.database;
+
+      final leadTable = await _findExistingTable(db, [
+        'LeadDetails',
+        'Tbl_LeadDetails',
+      ]);
+
+      final trackerTable = await _findExistingTable(db, [
+        'LMSLeadActivityTracker',
+      ]);
+
+      final resolvedLeadId = await _resolveLeadId(
+        db: db,
+        leadTable: leadTable,
+        leadId: cleanedLeadId,
+        tempLeadId: tempLeadId.trim(),
+      );
+
+      final activityStatus = await _getExistingActivityCode(
+        executor: db,
+        leadTable: leadTable,
+        resolvedLeadId: resolvedLeadId,
+      );
+
+      final trackerRows = await db.query(
+        trackerTable,
+        columns: ['ActivityCode', 'SubActivityCode'],
+        where: 'SrvcReqDtlCode = ?',
+        whereArgs: [_encrypt(resolvedLeadId)],
+        orderBy: 'RecId DESC',
+        limit: 1,
+      );
+
+      String activityCode = '';
+      String subActivityCode = '';
+
+      if (trackerRows.isNotEmpty) {
+        activityCode = _decrypt(trackerRows.first['ActivityCode']).trim();
+
+        subActivityCode = _decrypt(trackerRows.first['SubActivityCode']).trim();
+      }
+
+      // Prefer tracker ActivityCode because ActivityStatus
+      // may sometimes contain a description.
+      if (activityCode.isEmpty) {
+        activityCode = _normalizeActivityCode(activityStatus);
+      }
+
+      activityCode = _normalizeActivityCode(activityCode);
+      subActivityCode = _normalizeActivityCode(subActivityCode);
+
+      print(
+        'CURRENT ACTIVITY SELECTION: '
+        'Lead=$resolvedLeadId, '
+        'Activity=$activityCode, '
+        'SubActivity=$subActivityCode',
+      );
+
+      return {'activityCode': activityCode, 'subActivityCode': subActivityCode};
+    } catch (error, stackTrace) {
+      print('Current activity selection failed: $error');
+      print(stackTrace);
+
+      return {'activityCode': '', 'subActivityCode': ''};
+    }
+  }
+
+  Future<String?> getBlockedLeadStatusForLead({
+    required String leadId,
+    String tempLeadId = '',
+  }) async {
+    final cleanedLeadId = leadId.trim();
+
+    if (cleanedLeadId.isEmpty) {
+      return null;
+    }
+
+    try {
+      final db = await DatabaseHelper.instance.database;
+
+      final leadTable = await _findExistingTable(db, [
+        'LeadDetails',
+        'Tbl_LeadDetails',
+      ]);
+
+      final resolvedLeadId = await _resolveLeadId(
+        db: db,
+        leadTable: leadTable,
+        leadId: cleanedLeadId,
+        tempLeadId: tempLeadId.trim(),
+      );
+
+      final existingActivityCode = await _getExistingActivityCode(
+        executor: db,
+        leadTable: leadTable,
+        resolvedLeadId: resolvedLeadId,
+      );
+
+      final blockedStatus = _getBlockedExistingLeadStatus(existingActivityCode);
+
+      print(
+        'BLOCKED LEAD CHECK: '
+        'Lead=$resolvedLeadId, '
+        'Activity=$existingActivityCode, '
+        'Status=$blockedStatus',
+      );
+
+      return blockedStatus;
+    } catch (error, stackTrace) {
+      print('Blocked lead check failed: $error');
+      print(stackTrace);
+
+      // Do not block the page because of a read error.
+      // saveActivity performs the final check again.
+      return null;
+    }
+  }
+
   Future<UpdateActivitySaveResult> saveActivity(
     UpdateActivityPayload payload,
   ) async {
@@ -1294,6 +1795,23 @@ class UpdateActivitySaveRepository {
         tempLeadId: payload.tempLeadId.trim(),
       );
 
+      final existingActivityCode = await _getExistingActivityCode(
+        executor: db,
+        leadTable: leadTable,
+        resolvedLeadId: resolvedLeadId,
+      );
+
+      final blockedStatus = _getBlockedExistingLeadStatus(existingActivityCode);
+
+      if (blockedStatus != null) {
+        return UpdateActivitySaveResult.failure(
+          resolvedLeadId: resolvedLeadId,
+          message:
+              'This lead is already $blockedStatus. '
+              'Another activity cannot be updated.',
+        );
+      }
+
       final currentDateTime = _formatCurrentDateTime();
       final fields = payload.activityFields;
 
@@ -1321,13 +1839,13 @@ class UpdateActivitySaveRepository {
             )
           : false;
 
-      final existingActivityCode = payload.normalizedActivityCode == '37'
-          ? await _getExistingActivityCode(
-              executor: db,
-              leadTable: leadTable,
-              resolvedLeadId: resolvedLeadId,
-            )
-          : '';
+      // final existingActivityCode = payload.normalizedActivityCode == '37'
+      //     ? await _getExistingActivityCode(
+      //         executor: db,
+      //         leadTable: leadTable,
+      //         resolvedLeadId: resolvedLeadId,
+      //       )
+      //     : '';
       // final trackerData = <String, dynamic>{
       //   'ActivityCode': _encrypt(payload.activityCode),
       //   'SrvcReqDtlCode': _encrypt(resolvedLeadId),
@@ -1495,7 +2013,22 @@ class UpdateActivitySaveRepository {
         loginSapCode: payload.createdBy,
       );
 
+      // if (syncedOnline) {
+      //   return UpdateActivitySaveResult.onlineSuccess(
+      //     resolvedLeadId: resolvedLeadId,
+      //     message: 'Activity saved and synchronized successfully.',
+      //   );
+      // }
       if (syncedOnline) {
+        // Android flow:
+        // After successful disposition, fetch the latest
+        // activity again and refresh local lead/tracker data.
+        await refreshLatestActivityForLead(
+          leadId: resolvedLeadId,
+          tempLeadId: payload.tempLeadId,
+          sapCode: payload.createdBy,
+        );
+
         return UpdateActivitySaveResult.onlineSuccess(
           resolvedLeadId: resolvedLeadId,
           message: 'Activity saved and synchronized successfully.',

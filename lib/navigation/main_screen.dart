@@ -59,7 +59,7 @@ class _MainScreenState extends State<MainScreen> {
       CalendarScreen(),
       DashboardScreen(),
       CreateLeadScreen(),
-      SettingScreen(),
+      SettingsScreen()
     ];
   }
 

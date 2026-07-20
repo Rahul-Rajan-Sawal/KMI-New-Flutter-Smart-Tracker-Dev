@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bottom_nav/core/services/update_activity_sync_service.dart';
 
 class SettingsScreen extends StatefulWidget {
+  const SettingsScreen({super.key});
+
   @override
   SettingsScreenState createState() => SettingsScreenState();
 }
@@ -9,28 +12,12 @@ class SettingsScreenState extends State<SettingsScreen> {
   bool wifiSync = true;
   bool mobileSync = true;
   bool notification = true;
+  bool isSyncing = false;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Searched Leads"),
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-        iconTheme: const IconThemeData(color: Colors.white),
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Color(0xFF090979), // same dark blue
-                Color(0xFF00D4FF), // same cyan
-              ],
-            ),
-          ),
-        ),
-      ),
+      backgroundColor: Colors.grey[100],
 
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(12),
@@ -39,6 +26,7 @@ class SettingsScreenState extends State<SettingsScreen> {
           children: [
             /// NETWORK SETTINGS
             Card(
+              color: Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -114,21 +102,87 @@ class SettingsScreenState extends State<SettingsScreen> {
 
                     const SizedBox(height: 10),
 
-                    InkWell(
-                      onTap: () {},
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: isSyncing
+                            ? null
+                            : () async {
+                                setState(() => isSyncing = true);
 
-                      child: const Padding(
-                        padding: EdgeInsets.all(8),
+                                try {
+                                  final result =
+                                      await UpdateActivitySyncService.syncPendingActivities();
 
-                        child: Text(
-                          "Sync Now",
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.blue,
+                                  if (!mounted) return;
+
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        result.total == 0
+                                            ? "No pending activities found."
+                                            : "Sync completed: ${result.success} successful, "
+                                                  "${result.failed} failed.",
+                                      ),
+                                    ),
+                                  );
+                                } finally {
+                                  if (mounted) {
+                                    setState(() => isSyncing = false);
+                                  }
+                                }
+                              },
+                        icon: isSyncing
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Icon(Icons.sync),
+                        label: Text(isSyncing ? "Syncing..." : "Sync Now"),
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
                           ),
                         ),
                       ),
                     ),
+
+                    // SizedBox(
+                    //   width: double.infinity,
+                    //   child: ElevatedButton.icon(
+                    //     onPressed: () {
+                    //       // TODO: Sync logic
+                    //     },
+                    //     icon: const Icon(Icons.sync),
+                    //     label: const Text("Sync Now"),
+                    //     style: ElevatedButton.styleFrom(
+                    //       padding: const EdgeInsets.symmetric(vertical: 14),
+                    //       shape: RoundedRectangleBorder(
+                    //         borderRadius: BorderRadius.circular(10),
+                    //       ),
+                    //     ),
+                    //   ),
+                    // ),
+
+                    // InkWell(
+                    //   onTap: () {},
+
+                    //   child: const Padding(
+                    //     padding: EdgeInsets.all(8),
+
+                    //     child: Text(
+                    //       "Sync Now",
+                    //       style: TextStyle(
+                    //         fontWeight: FontWeight.bold,
+                    //         color: Colors.blue,
+                    //       ),
+                    //     ),
+                    //   ),
+                    // ),
                   ],
                 ),
               ),
@@ -138,6 +192,7 @@ class SettingsScreenState extends State<SettingsScreen> {
 
             /// NOTIFICATION SETTINGS
             Card(
+              color: Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -195,6 +250,7 @@ class SettingsScreenState extends State<SettingsScreen> {
 
             /// USER ACCOUNT
             Card(
+              color: Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -249,6 +305,7 @@ class SettingsScreenState extends State<SettingsScreen> {
 
             /// VERSION INFO
             const Card(
+              color: Colors.white,
               child: ListTile(
                 leading: Icon(Icons.phone_android_rounded),
                 title: Text("Version Info"),
