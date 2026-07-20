@@ -894,7 +894,7 @@ class _LeadUpdateState extends State<LeadUpdateNew> {
         builder: (context) => CommonSinglePopup(
           title: "Activity Disposition",
           message:
-              "Activity Disposition of lead number $leadId for lead open is updated for  successfully",  //$acdes
+              "Activity Disposition of lead number $leadId for lead open is updated for  successfully", //$acdes
           onOk: () {
             Navigator.pop(context);
           },
@@ -922,6 +922,28 @@ class _LeadUpdateState extends State<LeadUpdateNew> {
   }
 
   //end
+
+  Future<bool> _hasPendingOfflineActivity(String leadId) async {
+    final rows = await dbi.query(
+      'LMSLeadActivityTracker',
+      columns: ['SyncStatus'],
+      where: 'SrvcReqDtlCode = ?',
+      whereArgs: [CommonUtil.encryptIfNotEmpty(leadId)],
+    );
+
+    for (final row in rows) {
+      final syncStatus = CommonUtil.decryptIfNotEmpty(
+        row['SyncStatus']?.toString() ?? '',
+      ).trim();
+
+      if (syncStatus.toLowerCase() == 'pending') {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
   Future<void> saveLastActivity(Map<String, dynamic> response) async {
     try {
       List<dynamic> dataList = response['Table'] ?? [];
@@ -929,8 +951,27 @@ class _LeadUpdateState extends State<LeadUpdateNew> {
       if (dataList.isEmpty) return;
 
       for (var item in dataList) {
+        final serverLeadId = item['SrvcReqDtlCode']?.toString().trim() ?? '';
+
+        if (serverLeadId.isEmpty) {
+          continue;
+        }
+
+        final hasPendingActivity = await _hasPendingOfflineActivity(
+          serverLeadId,
+        );
+
+        if (hasPendingActivity) {
+          debugPrint(
+            'Pending offline activity found for Lead $serverLeadId. '
+            'Skipping LastActivity overwrite.',
+          );
+
+          continue;
+        }
+
         await dbi.update(
-          "Tbl_LeadDetails",
+          "LeadDetails",
           {
             "ReqChannel": CommonUtil.encryptIfNotEmpty(
               item['ReqChannel']?.toString() ?? "",

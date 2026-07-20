@@ -63,6 +63,8 @@ class _LeadUpdateState extends State<LeadUpdate> {
   List<UpdateActivityOption> subActivityOptions = [];
   UpdateActivityOption? selectedSubActivity;
 
+  String _pendingCurrentSubActivityCode = '';
+
   bool isLoadingSubActivities = false;
   String? subActivityLoadError;
   // Activity Code 1 — Fix Appointment
@@ -76,6 +78,9 @@ class _LeadUpdateState extends State<LeadUpdate> {
   bool isLoadingActivities = true;
   bool isSaving = false;
   String? activityLoadError;
+  bool isCheckingBlockedStatus = true;
+
+  String? blockedLeadStatus;
 
   void _clearConfiguredForm() {
     for (final controller in configuredFormControllers.values) {
@@ -326,8 +331,126 @@ class _LeadUpdateState extends State<LeadUpdate> {
   @override
   void initState() {
     super.initState();
-    _loadActivities();
+    //_loadActivities();
+    _initializeLeadUpdate();
   }
+
+  Future<void> _initializeLeadUpdate() async {
+    final leadId = _decryptSafely(widget.lead['SrvcReqDtlCode']);
+
+    final tempLeadId = _decryptSafely(widget.lead['TempSrvcReqDtlCode']);
+
+    // Refresh the latest server activity for a valid server lead.
+    if (leadId.isNotEmpty && !leadId.toUpperCase().startsWith('T')) {
+      await _saveRepository.refreshLatestActivityForLead(
+        leadId: leadId,
+        tempLeadId: tempLeadId,
+        sapCode: StaticVariables.mSAPCode,
+      );
+    } else {
+      debugPrint(
+        'LATEST ACTIVITY API SKIPPED: '
+        'Temporary or empty Lead ID: $leadId',
+      );
+    }
+
+    // Check terminal status after refreshing local data.
+    final blockedStatus = await _saveRepository.getBlockedLeadStatusForLead(
+      leadId: leadId,
+      tempLeadId: tempLeadId,
+    );
+
+    if (!mounted) {
+      return;
+    }
+
+    if (blockedStatus != null) {
+      setState(() {
+        blockedLeadStatus = blockedStatus;
+        isCheckingBlockedStatus = false;
+        isLoadingActivities = false;
+        activityOptions = [];
+        selectedActivity = null;
+      });
+
+      return;
+    }
+
+    // Read latest ActivityCode and SubActivityCode from local DB.
+    final currentSelection = await _saveRepository
+        .getCurrentActivitySelectionForLead(
+          leadId: leadId,
+          tempLeadId: tempLeadId,
+        );
+
+    final currentActivityCode = currentSelection['activityCode']?.trim() ?? '';
+
+    final currentSubActivityCode =
+        currentSelection['subActivityCode']?.trim() ?? '';
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      blockedLeadStatus = null;
+      isCheckingBlockedStatus = false;
+    });
+
+    await _loadActivities(
+      currentActivityCode: currentActivityCode,
+      currentSubActivityCode: currentSubActivityCode,
+    );
+  }
+  // Future<void> _initializeLeadUpdate() async {
+  //   final leadId = _decryptSafely(widget.lead['SrvcReqDtlCode']);
+
+  //   final tempLeadId = _decryptSafely(widget.lead['TempSrvcReqDtlCode']);
+
+  //   // Android flow:
+  //   // Refresh latest server activity only for a valid server lead.
+  //   if (leadId.isNotEmpty && !leadId.toUpperCase().startsWith('T')) {
+  //     await _saveRepository.refreshLatestActivityForLead(
+  //       leadId: leadId,
+  //       tempLeadId: tempLeadId,
+  //       sapCode: StaticVariables.mSAPCode,
+  //     );
+  //   } else {
+  //     debugPrint(
+  //       'LATEST ACTIVITY API SKIPPED: '
+  //       'Temporary or empty Lead ID: $leadId',
+  //     );
+  //   }
+
+  //   // Check terminal status after refreshing local data.
+  //   final blockedStatus = await _saveRepository.getBlockedLeadStatusForLead(
+  //     leadId: leadId,
+  //     tempLeadId: tempLeadId,
+  //   );
+
+  //   if (!mounted) {
+  //     return;
+  //   }
+
+  //   if (blockedStatus != null) {
+  //     setState(() {
+  //       blockedLeadStatus = blockedStatus;
+  //       isCheckingBlockedStatus = false;
+  //       isLoadingActivities = false;
+  //       activityOptions = [];
+  //       selectedActivity = null;
+  //     });
+
+  //     return;
+  //   }
+
+  //   setState(() {
+  //     blockedLeadStatus = null;
+  //     isCheckingBlockedStatus = false;
+  //   });
+
+  //   await _loadActivities();
+  // }
 
   /// Safely decrypts a value.
   ///
@@ -381,7 +504,12 @@ class _LeadUpdateState extends State<LeadUpdate> {
     );
   }
 
-  Future<void> _loadActivities() async {
+  Future<void> _loadActivities({
+    String currentActivityCode = '',
+    String currentSubActivityCode = '',
+  }) async {
+    _pendingCurrentSubActivityCode = currentSubActivityCode.trim();
+
     if (mounted) {
       setState(() {
         isLoadingActivities = true;
@@ -415,6 +543,19 @@ class _LeadUpdateState extends State<LeadUpdate> {
 
       if (!mounted) return;
 
+      final normalizedCurrentActivityCode =
+          int.tryParse(currentActivityCode.trim())?.toString() ??
+          currentActivityCode.trim();
+
+      UpdateActivityOption? currentActivity;
+
+      for (final activity in result) {
+        if (activity.normalizedCode == normalizedCurrentActivityCode) {
+          currentActivity = activity;
+          break;
+        }
+      }
+
       setState(() {
         activityOptions = result;
         selectedActivity = null;
@@ -424,6 +565,30 @@ class _LeadUpdateState extends State<LeadUpdate> {
           activityLoadError = 'Lead disposition not available.';
         }
       });
+
+      if (currentActivity != null) {
+        debugPrint(
+          'PRESELECTING ACTIVITY: '
+          '${currentActivity.code} - ${currentActivity.description}',
+        );
+
+        await _onActivityChanged(currentActivity);
+      } else if (normalizedCurrentActivityCode.isNotEmpty) {
+        debugPrint(
+          'CURRENT ACTIVITY NOT FOUND IN DROPDOWN: '
+          '$normalizedCurrentActivityCode',
+        );
+      }
+
+      // setState(() {
+      //   activityOptions = result;
+      //   selectedActivity = null;
+      //   isLoadingActivities = false;
+
+      //   if (result.isEmpty) {
+      //     activityLoadError = 'Lead disposition not available.';
+      //   }
+      // });
 
       debugPrint('ACTIVITIES RECEIVED: ${result.length}');
 
@@ -486,15 +651,25 @@ class _LeadUpdateState extends State<LeadUpdate> {
       await _loadAppointmentThrough();
     }
 
-    // Codes 35–38 require Sub Activity.
-    if (UpdateActivityCodeMapper.requiresSubActivity(activity.normalizedCode)) {
-      await _loadSubActivities(activity);
-    }
+    // // Codes 35–38 require Sub Activity.
+    // if (UpdateActivityCodeMapper.requiresSubActivity(activity.normalizedCode)) {
+    //   await _loadSubActivities(activity);
+    // }
 
-    // Codes 1 and 35 still use their existing custom UI.
-    // Other activities use the new shared form builder.
+    // // Codes 1 and 35 still use their existing custom UI.
+    // // Other activities use the new shared form builder.
+    // if (activity.normalizedCode != '1' && activity.normalizedCode != '35') {
+    //   await _prepareConfiguredForm(activity);
+    // }
+
+    // Prepare the configured form first.
     if (activity.normalizedCode != '1' && activity.normalizedCode != '35') {
       await _prepareConfiguredForm(activity);
+    }
+
+    // Load and preselect Sub Activity after the form is ready.
+    if (UpdateActivityCodeMapper.requiresSubActivity(activity.normalizedCode)) {
+      await _loadSubActivities(activity);
     }
   }
 
@@ -572,21 +747,58 @@ class _LeadUpdateState extends State<LeadUpdate> {
 
       if (!mounted) return;
 
-      // Prevent an old query result from appearing after
-      // the user has selected another activity.
+      // Ignore the result if another Activity was selected
+      // while the query was running.
       if (selectedActivity?.code != activity.code) {
         return;
       }
 
+      final normalizedSubActivityCode =
+          int.tryParse(_pendingCurrentSubActivityCode.trim())?.toString() ??
+          _pendingCurrentSubActivityCode.trim();
+
+      UpdateActivityOption? currentSubActivity;
+
+      for (final option in result) {
+        if (option.normalizedCode == normalizedSubActivityCode) {
+          currentSubActivity = option;
+          break;
+        }
+      }
+
       setState(() {
         subActivityOptions = result;
-        selectedSubActivity = null;
+        selectedSubActivity = currentSubActivity;
         isLoadingSubActivities = false;
+
+        if (currentSubActivity != null) {
+          configuredFormValues['SubActivityCode'] = currentSubActivity.code;
+
+          configuredFormValues['SubActivityDescription'] =
+              currentSubActivity.description;
+        }
 
         if (result.isEmpty) {
           subActivityLoadError = 'Sub Activity data not available.';
         }
       });
+
+      if (currentSubActivity != null) {
+        debugPrint(
+          'PRESELECTING SUB ACTIVITY: '
+          '${currentSubActivity.code} - '
+          '${currentSubActivity.description}',
+        );
+
+        _pendingCurrentSubActivityCode = '';
+
+        await _loadVisibleConfiguredDropdowns();
+      } else if (normalizedSubActivityCode.isNotEmpty) {
+        debugPrint(
+          'CURRENT SUB ACTIVITY NOT FOUND: '
+          '$normalizedSubActivityCode',
+        );
+      }
 
       debugPrint('SUB ACTIVITIES RECEIVED: ${result.length}');
 
@@ -598,6 +810,7 @@ class _LeadUpdateState extends State<LeadUpdate> {
       }
     } catch (error, stackTrace) {
       debugPrint('Sub Activity loading failed: $error');
+
       debugPrintStack(stackTrace: stackTrace);
 
       if (!mounted) return;
@@ -610,6 +823,74 @@ class _LeadUpdateState extends State<LeadUpdate> {
       });
     }
   }
+
+  // Future<void> _loadSubActivities(UpdateActivityOption activity) async {
+  //   if (!mounted) return;
+
+  //   setState(() {
+  //     isLoadingSubActivities = true;
+  //     subActivityLoadError = null;
+  //   });
+
+  //   try {
+  //     final reqChannelId = _decryptSafely(widget.lead['ReqChannelId']);
+
+  //     final leadSourceId = _decryptSafely(
+  //       widget.lead['LeadSource'] ?? widget.lead['LeadSourceId'],
+  //     );
+
+  //     final leadType = _getLeadType();
+
+  //     final bizType = _decryptSafely(widget.lead['BizType']);
+
+  //     final result = await _repository.getSubActivities(
+  //       reqChannelId: reqChannelId,
+  //       leadSourceId: leadSourceId,
+  //       leadType: leadType,
+  //       bizType: bizType,
+  //       activityCode: activity.code,
+  //     );
+
+  //     if (!mounted) return;
+
+  //     // Prevent an old query result from appearing after
+  //     // the user has selected another activity.
+  //     if (selectedActivity?.code != activity.code) {
+  //       return;
+  //     }
+
+  //     setState(() {
+  //       subActivityOptions = result;
+  //       selectedSubActivity = null;
+  //       isLoadingSubActivities = false;
+
+  //       if (result.isEmpty) {
+  //         subActivityLoadError = 'Sub Activity data not available.';
+  //       }
+  //     });
+
+  //     debugPrint('SUB ACTIVITIES RECEIVED: ${result.length}');
+
+  //     for (final option in result) {
+  //       debugPrint(
+  //         'Sub Activity: '
+  //         '${option.code} - ${option.description}',
+  //       );
+  //     }
+  //   } catch (error, stackTrace) {
+  //     debugPrint('Sub Activity loading failed: $error');
+  //     debugPrintStack(stackTrace: stackTrace);
+
+  //     if (!mounted) return;
+
+  //     setState(() {
+  //       subActivityOptions = [];
+  //       selectedSubActivity = null;
+  //       isLoadingSubActivities = false;
+  //       subActivityLoadError = 'Unable to load Sub Activities.';
+  //     });
+  //   }
+  // }
 
   void _onAppointmentThroughChanged(UpdateActivityLookupOption? option) {
     setState(() {
@@ -705,6 +986,50 @@ class _LeadUpdateState extends State<LeadUpdate> {
     super.dispose();
   }
 
+  Widget _buildBlockedLeadView() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Material(
+          elevation: 4,
+          borderRadius: BorderRadius.circular(8),
+          color: Colors.white,
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.block, size: 52, color: Colors.red),
+                const SizedBox(height: 16),
+                Text(
+                  'Lead Already ${blockedLeadStatus ?? 'Closed'}',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.red,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                const Text(
+                  'Another activity cannot be updated for this lead.',
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  child: const Text('Go Back'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final fieldHeight = MediaQuery.sizeOf(context).height * 0.055;
@@ -726,39 +1051,77 @@ class _LeadUpdateState extends State<LeadUpdate> {
           ),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildLabel('Activity *'),
-            _buildActivityDropdown(fieldHeight),
 
-            if (activityLoadError != null)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: Text(
-                  activityLoadError!,
-                  style: const TextStyle(color: Colors.red, fontSize: 13),
-                ),
+      body: isCheckingBlockedStatus
+          ? const Center(child: CircularProgressIndicator())
+          : blockedLeadStatus != null
+          ? _buildBlockedLeadView()
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildLabel('Activity *'),
+                  _buildActivityDropdown(fieldHeight),
+
+                  if (activityLoadError != null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: Text(
+                        activityLoadError!,
+                        style: const TextStyle(color: Colors.red, fontSize: 13),
+                      ),
+                    ),
+
+                  const SizedBox(height: 8),
+                  _buildActivitySpecificSection(fieldHeight),
+
+                  _buildLabel('Internal Comment'),
+                  _buildTextField(
+                    controller: internalCommentController,
+                    hintText: 'Internal Comment',
+                    maxLines: 3,
+                  ),
+
+                  const SizedBox(height: 16),
+                  _buildSaveButton(),
+                ],
               ),
-
-            const SizedBox(height: 8),
-            _buildActivitySpecificSection(fieldHeight),
-
-            _buildLabel('Internal Comment'),
-            _buildTextField(
-              controller: internalCommentController,
-              hintText: 'Internal Comment',
-              maxLines: 3,
             ),
 
-            const SizedBox(height: 16),
+      // body: SingleChildScrollView(
+      //   padding: const EdgeInsets.all(16),
+      //   child: Column(
+      //     crossAxisAlignment: CrossAxisAlignment.start,
+      //     children: [
+      //       _buildLabel('Activity *'),
+      //       _buildActivityDropdown(fieldHeight),
 
-            _buildSaveButton(),
-          ],
-        ),
-      ),
+      //       if (activityLoadError != null)
+      //         Padding(
+      //           padding: const EdgeInsets.only(bottom: 12),
+      //           child: Text(
+      //             activityLoadError!,
+      //             style: const TextStyle(color: Colors.red, fontSize: 13),
+      //           ),
+      //         ),
+
+      //       const SizedBox(height: 8),
+      //       _buildActivitySpecificSection(fieldHeight),
+
+      //       _buildLabel('Internal Comment'),
+      //       _buildTextField(
+      //         controller: internalCommentController,
+      //         hintText: 'Internal Comment',
+      //         maxLines: 3,
+      //       ),
+
+      //       const SizedBox(height: 16),
+
+      //       _buildSaveButton(),
+      //     ],
+      //   ),
+      // ),
     );
   }
 
@@ -1380,6 +1743,28 @@ class _LeadUpdateState extends State<LeadUpdate> {
         normalizedValue.contains('-----select');
   }
 
+  //new added after 14th june2026
+  String _getConfiguredDropdownDescription(String fieldKey) {
+    final selectedCode =
+        configuredFormValues[fieldKey]?.toString().trim() ?? '';
+
+    if (selectedCode.isEmpty) {
+      return '';
+    }
+
+    final options =
+        configuredDropdownOptions[fieldKey] ??
+        const <UpdateActivityLookupOption>[];
+
+    for (final option in options) {
+      if (option.code.trim() == selectedCode) {
+        return option.description.trim();
+      }
+    }
+
+    return '';
+  }
+
   UpdateActivityPayload? _buildConfiguredActivityPayload() {
     final activity = selectedActivity;
     final config = selectedFormConfig;
@@ -1401,8 +1786,20 @@ class _LeadUpdateState extends State<LeadUpdate> {
         continue;
       }
 
-      activityFields[field.databaseColumn] =
+      // activityFields[field.databaseColumn] =
+      //     configuredFormValues[field.key]?.toString().trim() ?? '';
+
+      final fieldValue =
           configuredFormValues[field.key]?.toString().trim() ?? '';
+
+      activityFields[field.databaseColumn] = fieldValue;
+
+      // Some Android legacy columns require the displayed
+      // dropdown description instead of the selected code.
+      if (field.type == UpdateActivityFieldType.dropdown) {
+        activityFields['__${field.key}Description'] =
+            _getConfiguredDropdownDescription(field.key);
+      }
     }
 
     if (config.requiresSubActivity) {
@@ -1422,6 +1819,13 @@ class _LeadUpdateState extends State<LeadUpdate> {
   }
 
   Future<void> _onSavePressed() async {
+    if (blockedLeadStatus != null) {
+      _showMessage(
+        'This lead is already $blockedLeadStatus. '
+        'Another activity cannot be updated.',
+      );
+      return;
+    }
     final activity = selectedActivity;
 
     if (activity == null) {
