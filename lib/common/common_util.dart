@@ -23,6 +23,29 @@ class CommonUtil {
     );
   }
 
+  static Widget loader({
+    String message = "Please wait...",
+  }) {
+    return Center(
+      child: ProgressDialogWidget(
+        message: message,
+      ),
+    );
+  }
+  
+
+  static void showdashloader(
+    BuildContext context, {
+    String message = "Please wait...",
+  }) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      useRootNavigator: true,
+      builder: (_) => ProgressDialogWidget(message: message),
+    );
+  }
+
   static void hide(BuildContext context) {
     if (Navigator.of(context, rootNavigator: true).canPop()) {
       Navigator.of(context, rootNavigator: true).pop();

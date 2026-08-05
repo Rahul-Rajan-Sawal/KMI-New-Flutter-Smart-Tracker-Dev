@@ -367,7 +367,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
     return Scaffold(
       backgroundColor: Colors.grey[100],
       body: dashboardState.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        // loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => CommonUtil.loader(          
+          message: "Dashboard Data Loading",
+          ),
 
         error: (err, stack) => Center(child: Text('Error: $err')),
 
