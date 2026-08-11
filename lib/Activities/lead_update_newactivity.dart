@@ -342,8 +342,14 @@ class _LeadUpdateState extends State<LeadUpdateNew> {
         orderBy: 'CAST(SortOrder as INTEGER)',
       );
 
+      // competitorList = competitorResult
+      //     .map((e) => e['ParamDesc1'].toString())
+      //     .toList();
+
+      //fixed bug of company selection dropdown
       competitorList = competitorResult
           .map((e) => e['ParamDesc1'].toString())
+          .toSet()
           .toList();
 
       // Lost Reason
@@ -678,7 +684,8 @@ class _LeadUpdateState extends State<LeadUpdateNew> {
               final date = await showDatePicker(
                 context: context,
                 initialDate: DateTime.now(),
-                firstDate: DateTime(2000),
+                //firstDate: DateTime(2000),
+                firstDate: DateTime.now(),
                 lastDate: DateTime(2100),
               );
               if (date != null) {
@@ -894,7 +901,7 @@ class _LeadUpdateState extends State<LeadUpdateNew> {
         builder: (context) => CommonSinglePopup(
           title: "Activity Disposition",
           message:
-              "Activity Disposition of lead number $leadId for lead open is updated for  successfully", //$acdes
+              "Activity Disposition of lead number $leadId for lead open is updated  successfully", //$acdes
           onOk: () {
             Navigator.pop(context);
           },

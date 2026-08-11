@@ -23,16 +23,9 @@ class CommonUtil {
     );
   }
 
-  static Widget loader({
-    String message = "Please wait...",
-  }) {
-    return Center(
-      child: ProgressDialogWidget(
-        message: message,
-      ),
-    );
+  static Widget loader({String message = "Please wait..."}) {
+    return Center(child: ProgressDialogWidget(message: message));
   }
-  
 
   static void showdashloader(
     BuildContext context, {
@@ -185,7 +178,7 @@ class CommonUtil {
     if (!isPrivacy) {
       await launchDirectCall(cleanNumber);
     } else {
-      await makeBridgeCall(cleanNumber, leadId, uniqueNo,name );
+      await makeBridgeCall(cleanNumber, leadId, uniqueNo, name);
     }
   }
 
@@ -228,7 +221,7 @@ class CommonUtil {
   ) async {
     try {
       String smMobileNumber = await CommonUtil.getUserMobileNo();
-      
+
       String msg_to_play =
           StaticVariables.mSAPCode +
           " | " +
@@ -256,37 +249,32 @@ class CommonUtil {
         sapCode: StaticVariables.mSAPCode,
       );
 
-    //   if (response["errorFlag"] == "success") {
-    //     print("Bridge Call Success");
-    //   } else {
-    //     print("Bridge Call Failed");
-    //   }
-    // } catch (e) {
-    //   print("Bridge Call Error: $e");
-    // }
-  
-    if (response != null &&
-        response["Table"] != null &&
-        response["Table"].isNotEmpty) {
-      
-      var result = response["Table"][0];
+      //   if (response["errorFlag"] == "success") {
+      //     print("Bridge Call Success");
+      //   } else {
+      //     print("Bridge Call Failed");
+      //   }
+      // } catch (e) {
+      //   print("Bridge Call Error: $e");
+      // }
 
-      if (result["ResponseCode"].toString() == "1") {
-        print("Bridge Call Success");
-        
+      if (response != null &&
+          response["Table"] != null &&
+          response["Table"].isNotEmpty) {
+        var result = response["Table"][0];
+
+        if (result["ResponseCode"].toString() == "1") {
+          print("Bridge Call Success");
+        } else {
+          print("Bridge Call Failed: ${result["Message"]}");
+        }
       } else {
-        print("Bridge Call Failed: ${result["Message"]}");
+        print("Bridge Call Failed: Invalid response structure");
       }
-    } else {
-      print("Bridge Call Failed: Invalid response structure");
+    } catch (e) {
+      print("Bridge Call Error: $e");
     }
-
-  } catch (e) {
-    print("Bridge Call Error: $e");
   }
-  
-  }
-
 
   static Future<bool> requestCallPermission() async {
     var status = await Permission.phone.request();
@@ -299,34 +287,88 @@ class CommonUtil {
     }
   }
 
-
   static Future<String> getUserMobileNo() async {
-  String mobileNo = "";
+    String mobileNo = "";
 
-  try {
-    final db = await DatabaseHelper.instance.database;
+    try {
+      final db = await DatabaseHelper.instance.database;
 
-    final result = await db.query(
-      'iUser',
-      where: 'UserId = ?',
-      whereArgs: [
-        CommonUtil.encryptIfNotEmpty(StaticVariables.mSAPCode),
-      ],
-    );
+      final result = await db.query(
+        'iUser',
+        where: 'UserId = ?',
+        whereArgs: [CommonUtil.encryptIfNotEmpty(StaticVariables.mSAPCode)],
+      );
 
-    if (result.isNotEmpty) {
-      String encryptedMobile =
-          result.first['MobileNo']?.toString() ?? "";
+      if (result.isNotEmpty) {
+        String encryptedMobile = result.first['MobileNo']?.toString() ?? "";
 
-      mobileNo = CommonUtil.decryptIfNotEmpty(encryptedMobile);
-    } else {
-      print("No user found in iUser table");
+        mobileNo = CommonUtil.decryptIfNotEmpty(encryptedMobile);
+      } else {
+        print("No user found in iUser table");
+      }
+    } catch (e) {
+      print("Error fetching MobileNo: $e");
     }
-  } catch (e) {
-    print("Error fetching MobileNo: $e");
+
+    return mobileNo;
   }
 
-  return mobileNo;
-}
+  static Future<void> sendSms(String number) async {
+    final Uri smsUri = Uri(scheme: 'sms', path: number);
 
+    if (await canLaunchUrl(smsUri)) {
+      await launchUrl(smsUri);
+    } else {
+      throw Exception("Could not open SMS app");
+    }
+  }
+
+  static Future<void> sendEmail(String email) async {
+    final Uri emailUri = Uri(scheme: 'mailto', path: email);
+
+    if (await canLaunchUrl(emailUri)) {
+      await launchUrl(emailUri);
+    } else {
+      throw Exception("Could not open email app");
+    }
+  }
+
+  static Future<bool> clearAppData() async {
+    try {
+      final db = await DatabaseHelper.instance.database;
+
+      await db.transaction((txn) async {
+        // User data
+        await txn.delete('LeadDetails');
+        await txn.delete('CalendarData_Mob');
+        await txn.delete('DashboardData_Mob');
+        await txn.delete('TeamDashboardData_Mob');
+        await txn.delete('LMSLeadActivityTracker');
+        await txn.delete('NotificationDetails');
+        await txn.delete('TBL_CUSTOMER_CNT_DTLS');
+        await txn.delete('TBL_AGENT_CNT_DTLS');
+
+        // Master tables
+        await txn.delete('CBFrmMSTLOB');
+        await txn.delete('CBFrmMSTProduct');
+        await txn.delete('Tbl_ZoneRegionBranch');
+        await txn.delete('Tbl_SalesManager');
+        await txn.delete('Tbl_Agent');
+        await txn.delete('Tbl_Reference');
+        await txn.delete('LookUpSU');
+        await txn.delete('Make_Master');
+        await txn.delete('MstReqChannel');
+
+        // Keep iUser if you don't want to delete login details.
+        // Otherwise uncomment:
+        // await txn.delete('iUser');
+      });
+
+      print("App data cleared successfully.");
+      return true;
+    } catch (e) {
+      print("Error clearing app data: $e");
+      return false;
+    }
+  }
 }

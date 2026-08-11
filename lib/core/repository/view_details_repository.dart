@@ -86,11 +86,11 @@ class ViewDetailsRepository {
 
       final result = await db.query(
         'TBL_CUSTOMER_CNT_DTLS',
-       where: 'LEAD_NO = ?',
-      whereArgs: [CommonUtil.encryptIfNotEmpty(leadId)],
+        where: 'LEAD_NO = ?',
+        whereArgs: [CommonUtil.encryptIfNotEmpty(leadId)],
         orderBy: 'DateInLong ASC',
       );
-    print(result);
+      print(result);
       for (var row in result) {
         final model = ContactModel.fromMap(row);
 
@@ -123,6 +123,57 @@ class ViewDetailsRepository {
     }
   }
 
+  /// Customer Contact email details
+Future<List<ContactModel>> getCustomerEmailContacts(String leadId) async {
+  final List<ContactModel> contacts = [];
+
+  try {
+    final db = await DatabaseHelper.instance.database;
+
+    final result = await db.query(
+      'TBL_CUSTOMER_CNT_DTLS',
+      where: 'LEAD_NO = ?',
+      whereArgs: [CommonUtil.encryptIfNotEmpty(leadId)],
+      orderBy: 'DateInLong ASC',
+    );
+
+    for (var row in result) {
+      final encryptedEmail = row['EMAIL_ID']?.toString() ?? '';
+
+      final decryptedEmail =
+          CommonUtil.decryptIfNotEmpty(encryptedEmail);
+
+      if (decryptedEmail != null &&
+          decryptedEmail.trim().isNotEmpty &&
+          decryptedEmail.trim() != '-' &&
+          decryptedEmail.trim().toLowerCase() != 'null' &&
+          decryptedEmail.trim().toLowerCase() != 'not available') {
+        final emailModel = ContactModel(
+          custCode: row['CustomerCode']?.toString(),
+          contact: decryptedEmail.trim(),
+        );
+
+        contacts.add(emailModel);
+      }
+    }
+
+    // Remove duplicate emails
+    final uniqueMap = <String, ContactModel>{};
+
+    for (final contact in contacts) {
+      final email = contact.cleanedContact;
+
+      if (email != null) {
+        uniqueMap[email.toLowerCase()] = contact;
+      }
+    }
+
+    return uniqueMap.values.toList();
+  } catch (e) {
+    print("Error while fetching customer email : $e");
+    return [];
+  }
+}
   Future<List<String>> getCustomerMobileNumbers(String leadId) async {
     final contacts = await getCustomerMobileContacts(leadId);
     return contacts.map((e) => e.cleanedContact!).toList();

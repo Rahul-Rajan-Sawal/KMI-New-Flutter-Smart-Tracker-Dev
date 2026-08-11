@@ -27,6 +27,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
 
+  int _selectedButton = 1;
   String _currentDate = "Loading...";
   String _currentTiming = "Loading...";
 
@@ -46,7 +47,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     final now = DateTime.now();
 
     firstDate = DateTime(now.year, now.month - 2, 1);
-    lastDate = DateTime(now.year, now.month + 2, 0);
+    lastDate = DateTime(now.year, now.month + 3, 0);
 
     _focusedDay = now;
   }
@@ -353,6 +354,11 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                   lastDay: lastDate,
                   focusedDay: _focusedDay,
 
+                  headerStyle: const HeaderStyle(
+                    formatButtonVisible: false,
+                    titleCentered: true,
+                  ),
+
                   calendarStyle: const CalendarStyle(
                     todayDecoration: BoxDecoration(
                       color: Colors.transparent,
@@ -455,6 +461,74 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                       );
                     },
                   ),
+                ),
+
+                SizedBox(height: 30)
+                , 
+                Row(
+                  children: [
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _selectedButton = 1;
+                          });
+                        },
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 250),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          decoration: BoxDecoration(
+                            color: _selectedButton == 1
+                                ? Colors.blue
+                                : Colors.white,
+                            borderRadius: BorderRadius.circular(25),
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            "RENEWAL",
+                            style: TextStyle(
+                              color: _selectedButton == 1
+                                  ? Colors.white
+                                  : Colors.black,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(width: 76),
+
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _selectedButton = 2;
+                          });
+                        },
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 250),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          decoration: BoxDecoration(
+                            color: _selectedButton == 2
+                                ? Colors.blue
+                                : Colors.white,
+                            borderRadius: BorderRadius.circular(25),
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            "FRESH LEAD",
+                            style: TextStyle(
+                              color: _selectedButton == 2
+                                  ? Colors.white
+                                  : Colors.black,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
 
                 const SizedBox(height: 30),
