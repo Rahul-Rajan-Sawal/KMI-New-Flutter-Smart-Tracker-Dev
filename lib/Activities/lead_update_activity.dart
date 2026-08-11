@@ -203,7 +203,7 @@ class _LeadUpdateState extends State<LeadUpdate> {
           lookupCode: lookupCode,
         );
 
-        if (!mounted) return;
+       if (!mounted) return;
 
         // Ignore a response belonging to an older activity.
         if (selectedFormConfig?.id != config.id) {
@@ -286,7 +286,8 @@ class _LeadUpdateState extends State<LeadUpdate> {
     final selectedDate = await showDatePicker(
       context: context,
       initialDate: now,
-      firstDate: DateTime(2000),
+      // firstDate: DateTime(2000),
+      firstDate: DateTime.now(),
       lastDate: DateTime(2100),
     );
 

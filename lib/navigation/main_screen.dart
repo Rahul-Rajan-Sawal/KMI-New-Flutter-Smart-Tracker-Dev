@@ -8,6 +8,7 @@ import 'package:flutter_bottom_nav/Activities/login_activity.dart';
 import 'package:flutter_bottom_nav/Activities/setting.dart';
 import 'package:flutter_bottom_nav/Drawer/my_drawer_header.dart';
 import 'package:flutter_bottom_nav/common/common_popup.dart';
+import 'package:flutter_bottom_nav/common/common_util.dart';
 import 'package:flutter_bottom_nav/core/static_variables.dart';
 import 'package:flutter_bottom_nav/fragments/calendar_screen.dart';
 import 'package:flutter_bottom_nav/fragments/create_lead_screen.dart';
@@ -59,7 +60,7 @@ class _MainScreenState extends State<MainScreen> {
       CalendarScreen(),
       DashboardScreen(),
       CreateLeadScreen(),
-      SettingsScreen()
+      SettingsScreen(),
     ];
   }
 
@@ -73,6 +74,10 @@ class _MainScreenState extends State<MainScreen> {
     Navigator.pop(context);
     if (_drawerItems[index]["title"] == "Logout") {
       popUp();
+      return;
+    }
+    if (_drawerItems[index]["title"] == "Clear App Data") {
+      clearAppDataPopup();
       return;
     }
     if (_drawerItems[index]["title"] == "Schedule") {
@@ -338,6 +343,55 @@ class _MainScreenState extends State<MainScreen> {
       },
     );
   }
+
+
+void clearAppDataPopup() {
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (BuildContext dialogContext) {
+      return CommonPopup(
+        title: "Clear App Data",
+        message:
+            "Are you sure you want to clear app data?\n\n"
+            "All saved application data will be deleted.",
+        onNo: () {
+          Navigator.of(dialogContext).pop();
+        },
+        onYes: () async {
+          Navigator.of(dialogContext).pop();
+
+          CommonUtil.show(
+            context,
+            message: "Clearing App Data...",
+          );
+
+          try {
+            await CommonUtil.clearAppData();
+
+            CommonUtil.hide(context);
+
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(
+                builder: (_) => LoginActivity(),
+              ),
+              (route) => false,
+            );
+          } catch (e) {
+            CommonUtil.hide(context);
+
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text("Failed to clear app data."),
+              ),
+            );
+          }
+        },
+      );
+    },
+  );
+}
 }
 
 class _Bottomlabel extends StatelessWidget {

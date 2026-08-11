@@ -68,14 +68,14 @@ class _LoginActivityState extends State<LoginActivity> {
               ),
 
               SizedBox(height: screenHeight * 0.02),
-
+             
               Image.asset(
                 "assets/indusind_logo.png",
                 height: screenHeight * 0.08,
                 fit: BoxFit.contain,
               ),
 
-              SizedBox(height: screenHeight * 0.04),
+              SizedBox(height: screenHeight * 0.05),
 
               Text(
                 "Smart Tracker",
@@ -86,7 +86,7 @@ class _LoginActivityState extends State<LoginActivity> {
                 ),
               ),
 
-              SizedBox(height: screenHeight * 0.06),
+              SizedBox(height: screenHeight * 0.04),
 
               TextField(
                 controller: usernameController,
@@ -407,6 +407,18 @@ class _LoginActivityState extends State<LoginActivity> {
               ),
 
               SizedBox(height: screenHeight * 0.04),
+
+               Text(
+                "A Product of\nKrish Mark Infotech (I) Pvt. Ltd. © 2019",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: scaleFont(14),
+                  color: const Color.fromARGB(255, 45, 42, 42),
+                  fontWeight: FontWeight.w300,
+                ),
+              ),
+
+              SizedBox(height: screenHeight * 0.02),
 
               Image.asset(
                 "assets/login_bg.png",

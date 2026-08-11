@@ -6,6 +6,7 @@ import 'package:flutter_bottom_nav/core/repository/view_details_repository.dart'
 import 'package:flutter_bottom_nav/core/static_variables.dart';
 import 'package:flutter_bottom_nav/database/dbcopyhelper.dart';
 import 'package:flutter_bottom_nav/database/offline_DB_helper.dart';
+import 'package:flutter_bottom_nav/models/contact_Model.dart';
 
 class ViewDetails extends StatefulWidget {
   final Map<String, dynamic> lead;
@@ -382,6 +383,8 @@ class _ViewDetailsState extends State<ViewDetails> {
                                       ],
                                     ),
                                   ),
+
+                                  //functional btns seperation
                                   SizedBox(width: 20),
                                   Column(
                                     children: const [
@@ -401,40 +404,198 @@ class _ViewDetailsState extends State<ViewDetails> {
                                     ],
                                   ),
                                   SizedBox(width: 20),
-                                  Column(
-                                    children: const [
-                                      Icon(
-                                        Icons.message,
-                                        color: Colors.white,
-                                        size: 28,
-                                      ),
-                                      SizedBox(height: 4),
-                                      Text(
-                                        "Message",
-                                        style: TextStyle(
+
+                                  // Column(
+                                  //   children: const [
+                                  //     Icon(
+                                  //       Icons.message,
+                                  //       color: Colors.white,
+                                  //       size: 28,
+                                  //     ),
+                                  //     SizedBox(height: 4),
+                                  //     Text(
+                                  //       "Message",
+                                  //       style: TextStyle(
+                                  //         color: Colors.white,
+                                  //         fontSize: 12,
+                                  //       ),
+                                  //     ),
+                                  //   ],
+                                  // ),
+                                  InkWell(
+                                    onTap: () async {
+                                      // Message flow
+                                      // Step 1: Privacy check
+                                      final bool isPrivacy =
+                                          await CommonUtil.isPrivacyFlag();
+
+                                      if (isPrivacy) {
+                                        showDialog(
+                                          context: context,
+                                          builder: (context) {
+                                            return CommonSinglePopup(
+                                              title: "Unable to send message",
+                                              message:
+                                                  "You can not use this functionality due to privacy settings.",
+                                              onOk: () {
+                                                Navigator.pop(context);
+                                              },
+                                            );
+                                          },
+                                        );
+                                        return;
+                                      }
+                                      final List<String> numbers = await repo
+                                          .getCustomerMobileNumbers(leadId);
+
+                                      print(
+                                        "Customer mobile numbers: $numbers",
+                                      );
+
+                                      if (numbers.isEmpty) {
+                                        CommonUtil.hide(context);
+
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          const SnackBar(
+                                            content: Text(
+                                              "Number Not Available",
+                                            ),
+                                          ),
+                                        );
+
+                                        return;
+                                      }
+
+                                      if (numbers.length > 1) {
+                                        CommonUtil.hide(context);
+                                        _showMessageNumberSelection(numbers);
+                                        return;
+                                      }
+
+                                      // Only one number
+                                      final String number = numbers.first;
+                                      print("Selected mobile number: $number");
+
+                                      CommonUtil.hide(context);
+
+                                      try {
+                                        await CommonUtil.sendSms(number);
+                                      } catch (e) {
+                                        print("Unable to open SMS app: $e");
+                                      }
+                                    },
+                                    child: Column(
+                                      children: const [
+                                        Icon(
+                                          Icons.message,
                                           color: Colors.white,
-                                          fontSize: 12,
+                                          size: 28,
                                         ),
-                                      ),
-                                    ],
+                                        SizedBox(height: 4),
+                                        Text(
+                                          "Message",
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                   SizedBox(width: 20),
-                                  Column(
-                                    children: const [
-                                      Icon(
-                                        Icons.email,
-                                        color: Colors.white,
-                                        size: 28,
-                                      ),
-                                      SizedBox(height: 4),
-                                      Text(
-                                        "Email",
-                                        style: TextStyle(
+                                  // Column(
+                                  //   children: const [
+                                  //     Icon(
+                                  //       Icons.email,
+                                  //       color: Colors.white,
+                                  //       size: 28,
+                                  //     ),
+                                  //     SizedBox(height: 4),
+                                  //     Text(
+                                  //       "Email",
+                                  //       style: TextStyle(
+                                  //         color: Colors.white,
+                                  //         fontSize: 12,
+                                  //       ),
+                                  //     ),
+                                  //   ],
+                                  // ),
+                                  InkWell(
+                                    onTap: () async {
+                                      // Step 1: Privacy check
+                                      final bool isPrivacy =
+                                          await CommonUtil.isPrivacyFlag();
+
+                                      if (isPrivacy) {
+                                        showDialog(
+                                          context: context,
+                                          builder: (context) {
+                                            return CommonSinglePopup(
+                                              title: "Unable to send email",
+                                              message:
+                                                  "You can not use this functionality due to privacy settings.",
+                                              onOk: () {
+                                                Navigator.pop(context);
+                                              },
+                                            );
+                                          },
+                                        );
+                                        return;
+                                      }
+
+                                      // Step 2: Get emails from local DB
+                                      final List<ContactModel> emails =
+                                          await repo.getCustomerEmailContacts(
+                                            leadId,
+                                          );
+
+                                      if (emails.isEmpty) {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          const SnackBar(
+                                            content: Text(
+                                              "Email Not Available",
+                                            ),
+                                          ),
+                                        );
+                                        return;
+                                      }
+
+                                      if (emails.length > 1) {
+                                        _showEmailSelection(emails);
+                                        return;
+                                      }
+
+                                      // Only one email
+                                      final String email =
+                                          emails.first.cleanedContact!;
+                                      print("Selected email: $email");
+
+                                      print(
+                                        "Customer email addresses: "
+                                        "${emails.map((e) => e.cleanedContact).toList()}",
+                                      );
+                                    },
+                                    child: Column(
+                                      children: const [
+                                        Icon(
+                                          Icons.email,
                                           color: Colors.white,
-                                          fontSize: 12,
+                                          size: 28,
                                         ),
-                                      ),
-                                    ],
+                                        SizedBox(height: 4),
+                                        Text(
+                                          "Email",
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ],
                               ),
@@ -445,7 +606,7 @@ class _ViewDetailsState extends State<ViewDetails> {
                               //   children: [
                               //    InkWell(
                               //     onTap: ()async{
-                              //       print("CAll Icon Clicked You Mother fucker !");
+                              //       print("CAll Icon Clicked ");
                               //     },
                               //    ),
 
@@ -1434,6 +1595,94 @@ class _ViewDetailsState extends State<ViewDetails> {
                           uniqueNo,
                           name,
                         );
+                      },
+                    );
+                  }).toList(),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showMessageNumberSelection(List<String> numbers) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return SizedBox(
+          height: 200 + numbers.length * 60,
+          child: Column(
+            children: [
+              const SizedBox(height: 10),
+              const Text(
+                "Select Number",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const Divider(),
+              Expanded(
+                child: ListView(
+                  children: numbers.map((number) {
+                    return ListTile(
+                      leading: const Icon(Icons.message),
+                      title: Text(number),
+                      onTap: () async {
+                        Navigator.pop(context);
+
+                        try {
+                          await CommonUtil.sendSms(number);
+                        } catch (e) {
+                          print("Unable to open SMS app: $e");
+                        }
+                      },
+                    );
+                  }).toList(),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showEmailSelection(List<ContactModel> emails) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return SizedBox(
+          height: 200 + emails.length * 60,
+          child: Column(
+            children: [
+              const SizedBox(height: 10),
+              const Text(
+                "Select Email",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const Divider(),
+              Expanded(
+                child: ListView(
+                  children: emails.map((emailModel) {
+                    final email = emailModel.cleanedContact!;
+
+                    return ListTile(
+                      leading: const Icon(Icons.email),
+                      title: Text(email),
+                      onTap: () async {
+                        Navigator.pop(context);
+
+                        try {
+                          await CommonUtil.sendEmail(email);
+                        } catch (e) {
+                          print("Unable to open email app: $e");
+                        }
                       },
                     );
                   }).toList(),
