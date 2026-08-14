@@ -1,12 +1,12 @@
 // add_contact_screen.dart
-import 'dart:convert';
+// import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_bottom_nav/Activities/activity_add_contact.dart';
 import 'package:flutter_bottom_nav/core/apicall/async_search_agent_contact.dart';
 import 'package:flutter_bottom_nav/core/static_variables.dart';
 import 'package:flutter_bottom_nav/database/database_helper.dart';
 import 'package:flutter_bottom_nav/database/offline_DB_helper.dart';
-import 'package:sqflite_sqlcipher/sqflite.dart';
+// import 'package:sqflite_sqlcipher/sqflite.dart';
 
 // ✅ Simple table name constant - no import headaches
 const String TBL_AGENT_CNT_DTLS = 'TBL_AGENT_CNT_DTLS';
@@ -332,7 +332,7 @@ class _AddAgentContactScreenState extends State<AddAgentContactScreen> {
                 value: arrIMDTypeDesc.contains(selectedType)
                     ? selectedType
                     : null,
-                hint: const Text("Agent Code"),
+                hint: const Text("Intermediary Type"),
                 isExpanded: true,
                 decoration: const InputDecoration(border: InputBorder.none),
                 items: arrIMDTypeDesc
@@ -398,22 +398,23 @@ class _AddAgentContactScreenState extends State<AddAgentContactScreen> {
                       ),
                       elevation: 2,
                     ),
-                    child: isLoading
-                        ? const SizedBox(
-                            height: 18,
-                            width: 18,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2,
-                            ),
-                          )
-                        : const Text(
-                            "Search",
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 15,
-                            ),
+                    child:
+                        // isLoading
+                        //     ? const SizedBox(
+                        //         height: 18,
+                        //         width: 18,
+                        //         child: CircularProgressIndicator(
+                        //           color: Colors.white,
+                        //           strokeWidth: 2,
+                        //         ),
+                        //       )
+                        const Text(
+                          "Search",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
                           ),
+                        ),
                   ),
                 ),
               ],

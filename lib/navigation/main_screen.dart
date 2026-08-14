@@ -39,7 +39,7 @@ class _MainScreenState extends State<MainScreen> {
   int _selectedDrawerIndex = 0;
 
   final List<Map<String, dynamic>> _drawerItems = [
-    {"icon": Icons.schedule, "title": "Schedule"},
+    {"icon": Icons.schedule, "title": "Schedules"},
     {"icon": Icons.notifications, "title": "Notifications"},
     {"icon": Icons.person, "title": "Add Customer Contact"},
     {"icon": Icons.face, "title": "Add Agent Customer Details"},
@@ -80,7 +80,7 @@ class _MainScreenState extends State<MainScreen> {
       clearAppDataPopup();
       return;
     }
-    if (_drawerItems[index]["title"] == "Schedule") {
+    if (_drawerItems[index]["title"] == "Schedules") {
       Navigator.push(
         context,
         MaterialPageRoute(builder: (_) => UpcomingEventActivity()),
@@ -91,8 +91,6 @@ class _MainScreenState extends State<MainScreen> {
         context,
         MaterialPageRoute(builder: (_) => AddAgentContactScreen()),
       );
-
-      return;
     }
     if (_drawerItems[index]["title"] == "Add Customer Contact") {
       Navigator.push(
@@ -297,29 +295,62 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   //Drawer LIst Builder
+  // Widget _buildDrawerList() {
+  //   return ListView.builder(
+  //     itemCount: _drawerItems.length,
+  //     itemBuilder: (context, index) {
+  //       final item = _drawerItems[index];
+
+  //       return ListTile(
+  //         leading: Icon(
+  //           item["icon"],
+  //           color: _selectedDrawerIndex == index ? Colors.blue : Colors.black,
+  //         ),
+  //         title: Text(
+  //           item["title"],
+  //           style: TextStyle(
+  //             color: _selectedDrawerIndex == index ? Colors.blue : Colors.black,
+  //           ),
+  //         ),
+  //         selected: _selectedDrawerIndex == index,
+  //         onTap: () => _onDrawerItemTap(index),
+  //       );
+  //     },
+  //   );
+  // }
+  //Added on 14Aug26
   Widget _buildDrawerList() {
     return ListView.builder(
       itemCount: _drawerItems.length,
       itemBuilder: (context, index) {
         final item = _drawerItems[index];
+        final isSelected = _selectedDrawerIndex == index;
 
-        return ListTile(
-          leading: Icon(
-            item["icon"],
-            color: _selectedDrawerIndex == index ? Colors.blue : Colors.black,
+        return Container(
+          margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+
+          decoration: BoxDecoration(
+            color: isSelected ? Colors.grey[300] : Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+            border: isSelected
+                ? const Border(left: BorderSide(color: Color(0xFF003399)))
+                : null,
           ),
-          title: Text(
-            item["title"],
-            style: TextStyle(
-              color: _selectedDrawerIndex == index ? Colors.blue : Colors.black,
+          child: ListTile(
+            leading: Icon(
+              item["icon"],
+              color: isSelected ? const Color(0xFF003399) : Colors.black,
             ),
+            title: Text(
+              item["title"],
+              style: const TextStyle(color: Colors.black),
+            ),
+            onTap: () => _onDrawerItemTap(index),
           ),
-          selected: _selectedDrawerIndex == index,
-          onTap: () => _onDrawerItemTap(index),
         );
       },
     );
-  }
+  } //end
 
   void popUp() {
     showDialog(
@@ -344,54 +375,46 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 
+  void clearAppDataPopup() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext dialogContext) {
+        return CommonPopup(
+          title: "Clear App Data",
+          message:
+              "Are you sure you want to clear app data?\n\n"
+              "All saved application data will be deleted.",
+          onNo: () {
+            Navigator.of(dialogContext).pop();
+          },
+          onYes: () async {
+            Navigator.of(dialogContext).pop();
 
-void clearAppDataPopup() {
-  showDialog(
-    context: context,
-    barrierDismissible: false,
-    builder: (BuildContext dialogContext) {
-      return CommonPopup(
-        title: "Clear App Data",
-        message:
-            "Are you sure you want to clear app data?\n\n"
-            "All saved application data will be deleted.",
-        onNo: () {
-          Navigator.of(dialogContext).pop();
-        },
-        onYes: () async {
-          Navigator.of(dialogContext).pop();
+            CommonUtil.show(context, message: "Clearing App Data...");
 
-          CommonUtil.show(
-            context,
-            message: "Clearing App Data...",
-          );
+            try {
+              await CommonUtil.clearAppData();
 
-          try {
-            await CommonUtil.clearAppData();
+              CommonUtil.hide(context);
 
-            CommonUtil.hide(context);
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (_) => LoginActivity()),
+                (route) => false,
+              );
+            } catch (e) {
+              CommonUtil.hide(context);
 
-            Navigator.pushAndRemoveUntil(
-              context,
-              MaterialPageRoute(
-                builder: (_) => LoginActivity(),
-              ),
-              (route) => false,
-            );
-          } catch (e) {
-            CommonUtil.hide(context);
-
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text("Failed to clear app data."),
-              ),
-            );
-          }
-        },
-      );
-    },
-  );
-}
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text("Failed to clear app data.")),
+              );
+            }
+          },
+        );
+      },
+    );
+  }
 }
 
 class _Bottomlabel extends StatelessWidget {
