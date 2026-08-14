@@ -71,29 +71,56 @@ class _CustomerContactScreenState extends State<CustomerContactScreen> {
 
                 /// Buttons
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    SizedBox(
-                      width: 120,
-                      height: 40,
-                      child: OutlinedButton(
+                    Expanded(
+                      child: ElevatedButton(
                         onPressed: () {
                           leadController.clear();
                           policyController.clear();
+
                           setState(() {
                             customerData.clear();
                             showNoData = false;
                           });
                         },
-                        child: const Text("Clear"),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.grey[200],
+                          foregroundColor: Colors.blue[800],
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: const Text(
+                          "Clear",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                          ),
+                        ),
                       ),
                     ),
-                    SizedBox(
-                      width: 120,
-                      height: 40,
+                    const SizedBox(width: 16),
+                    Expanded(
                       child: ElevatedButton(
                         onPressed: isLoading ? null : _handleSearch,
-                        child: const Text("Search"),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF003399),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                          elevation: 2,
+                        ),
+                        child: const Text(
+                          "Search",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -317,7 +344,7 @@ class _CustomerContactScreenState extends State<CustomerContactScreen> {
                 /// Product & Premium
                 Row(
                   children: [
-                    _col("PRODUCT", data["ProdCode"]),
+                    _col("PRODUCT", data["ProdCodeDesc"]),
                     _col("PREMIUM", data["PremiumAmt"], right: true),
                   ],
                 ),
@@ -326,9 +353,9 @@ class _CustomerContactScreenState extends State<CustomerContactScreen> {
                 /// Policy & Period
                 Row(
                   children: [
-                    _col("POLICY", data["PolicyNo"]),
+                    _col("POLICY NUMBER", data["PolicyNo"]),
                     _col(
-                      "PERIOD",
+                      "POLICY PERIOD",
                       _formatPolicyPeriod(
                         data["PolicyStartDate"],
                         data["PolicyEndDate"],
@@ -342,8 +369,8 @@ class _CustomerContactScreenState extends State<CustomerContactScreen> {
                 /// Mobile & Email - Your original masking
                 Row(
                   children: [
-                    _col("MOBILE", maskMobile(data["MobileNo"])),
-                    _col("EMAIL", maskEmail(data["Email"]), right: true),
+                    _col("MOBILE NUMBER", maskMobile(data["MobileNo"])),
+                    _col("EMAIL ID", maskEmail(data["Email"]), right: true),
                   ],
                 ),
               ],
@@ -373,14 +400,14 @@ class _CustomerContactScreenState extends State<CustomerContactScreen> {
                 };
               }).toList();
 
-              print("🚀 Sending list to next screen:");
+              print(" Sending list to next screen:");
               print(formattedList);
 
               Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (context) => AddCustomerContactScreen(
-                    contactList: formattedList, // ✅ FULL LIST
+                    contactList: formattedList, //  FULL LIST
                   ),
                 ),
               );
@@ -423,7 +450,7 @@ class _CustomerContactScreenState extends State<CustomerContactScreen> {
     );
   }
 
-  /// ✅ Column widget - Your original
+  ///  Column widget - Your original
   Widget _col(String title, dynamic value, {bool right = false}) {
     String displayValue =
         (value == null ||
@@ -453,7 +480,7 @@ class _CustomerContactScreenState extends State<CustomerContactScreen> {
     );
   }
 
-  /// ✅ Mask mobile - Your original
+  ///  Mask mobile - Your original
   String maskMobile(dynamic number) {
     if (number == null ||
         number.toString().trim().isEmpty ||
@@ -464,7 +491,7 @@ class _CustomerContactScreenState extends State<CustomerContactScreen> {
     return num.length >= 4 ? "XXXXXX${num.substring(num.length - 4)}" : num;
   }
 
-  /// ✅ Mask email - Your original
+  ///  Mask email - Your original
   String maskEmail(dynamic email) {
     if (email == null ||
         email.toString().trim().isEmpty ||
@@ -477,7 +504,7 @@ class _CustomerContactScreenState extends State<CustomerContactScreen> {
     return "${e.substring(0, 2)}****${e.substring(at)}";
   }
 
-  /// ✅ Format policy period - Your original (with bug fix)
+  ///  Format policy period - Your original (with bug fix)
   String _formatPolicyPeriod(dynamic startDate, dynamic endDate) {
     String start =
         (startDate == null ||
@@ -486,7 +513,7 @@ class _CustomerContactScreenState extends State<CustomerContactScreen> {
         ? "Not Available"
         : startDate.toString().replaceAll("00:00:00.000", "").trim();
 
-    // ✅ BUG FIX: Use endDate (not startDate twice like Android)
+    //  BUG FIX: Use endDate (not startDate twice like Android)
     String end =
         (endDate == null ||
             endDate.toString().trim().isEmpty ||

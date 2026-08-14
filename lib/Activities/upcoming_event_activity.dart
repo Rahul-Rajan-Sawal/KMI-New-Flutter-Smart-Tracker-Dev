@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bottom_nav/Activities/lead_update_activity.dart';
 import 'package:flutter_bottom_nav/Activities/lead_update_newactivity.dart';
+import 'package:flutter_bottom_nav/Activities/login_activity.dart';
 import 'package:flutter_bottom_nav/Activities/upcoming_activity_row.dart';
 import 'package:flutter_bottom_nav/Activities/view_details.dart';
+import 'package:flutter_bottom_nav/common/common_popup.dart';
 import 'package:flutter_bottom_nav/common/common_singltbtn_popup.dart';
 import 'package:flutter_bottom_nav/common/common_util.dart';
 import 'package:flutter_bottom_nav/core/apicall/async_get_single_lead_details.dart';
@@ -213,7 +215,7 @@ class _UpcomingEventActivity extends State<UpcomingEventActivity> {
         return;
       }
 
-    await showCallNumberSelection(
+      await showCallNumberSelection(
         numbers: numbers,
         leadId: leadId,
         uniqueNo: policyNumber,
@@ -246,7 +248,7 @@ class _UpcomingEventActivity extends State<UpcomingEventActivity> {
     required String uniqueNo,
     required String customerName,
   }) {
-  return showModalBottomSheet<void>(
+    return showModalBottomSheet<void>(
       context: context,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -311,7 +313,7 @@ class _UpcomingEventActivity extends State<UpcomingEventActivity> {
       await leadUpcomingSchedules();
       applyFilter();
     });
-    //getProductList();
+    // getProductList();
   }
 
   //getting activity desc from activity status code
@@ -548,10 +550,7 @@ class _UpcomingEventActivity extends State<UpcomingEventActivity> {
       // await loadUpcomingSchedules();
 
       await getProductList();
-
       applyFilter();
-
-      await getProductList();
     } catch (e) {
       print("Error loading leads: $e");
     }
@@ -618,7 +617,11 @@ class _UpcomingEventActivity extends State<UpcomingEventActivity> {
           productCodeList.add(prodCode);
         }
       }
-      selectedProduct ??= "All Product";
+      // selectedProduct ??= "All Product";
+      if (selectedProduct == null || !productList.contains(selectedProduct)) {
+        selectedProduct = "All Product";
+        selectedProductCode = "";
+      }
       print(productResult);
 
       if (mounted) {
@@ -655,16 +658,22 @@ class _UpcomingEventActivity extends State<UpcomingEventActivity> {
           onPressed: () => Navigator.pop(context),
         ),
         //leading: const Icon(Icons.arrow_back_ios),
+
+        //bug for logout functionality
         actions: [
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: const [
-              Icon(Icons.power_settings_new),
-              Text("Logout", style: TextStyle(fontSize: 10)),
-            ],
+          GestureDetector(
+            onTap: popUp,
+            child: const Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: const [
+                Icon(Icons.power_settings_new),
+                Text("Logout", style: TextStyle(fontSize: 10)),
+              ],
+            ),
           ),
+
           const SizedBox(width: 10),
-        ],
+        ], //bug resolve end
       ),
 
       body: SingleChildScrollView(
@@ -762,7 +771,7 @@ class _UpcomingEventActivity extends State<UpcomingEventActivity> {
           selectedTab = value;
         });
         if (value == "schedule") {
-          filterMessage = "Showing activities fo next $scheduleDays days";
+          filterMessage = "Showing activities for next $scheduleDays days";
           setScheduleDates();
           await leadUpcomingSchedules();
           applyFilter();
@@ -825,7 +834,7 @@ class _UpcomingEventActivity extends State<UpcomingEventActivity> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            _buildInfo("Showing Data", showingDate),
+            _buildInfo("Showing Date", showingDate), //Changes on 11Aug26
             _buildInfo("Timing", showingTime),
           ],
         ),
@@ -963,34 +972,190 @@ class _UpcomingEventActivity extends State<UpcomingEventActivity> {
         ),
         const SizedBox(height: 6),
 
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: Colors.black),
+        //Added by manish 11Aug26
+        InkWell(
+          onTap: () {
+            _showProductSearchDialog();
+          },
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: Colors.black),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    selectedProduct ?? "Select Product",
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: selectedProduct == null
+                          ? Colors.grey
+                          : Colors.black,
+                    ),
+                  ),
+                ),
+                const Icon(Icons.arrow_drop_down),
+              ],
+            ),
           ),
-          child: DropdownButton<String>(
-            value: selectedProduct,
-            isExpanded: true,
-            underline: const SizedBox(),
-            items: productList.map((item) {
-              return DropdownMenuItem<String>(value: item, child: Text(item));
-            }).toList(),
-            onChanged: (val) {
-              int index = productList.indexOf(val!);
-              setState(() {
-                selectedProduct = val;
-                selectedProductCode = productCodeList[index];
-              });
-              applyFilter();
-            },
-            hint: const Text("Select Product"),
-          ),
-        ),
+        ), //end by manish
+        // Container(
+        //   padding: const EdgeInsets.symmetric(horizontal: 12),
+        //   decoration: BoxDecoration(
+        //     color: Colors.white,
+        //     borderRadius: BorderRadius.circular(10),
+        //     border: Border.all(color: Colors.black),
+        //   ),
+        //   child: DropdownButton<String>(
+        //     value: selectedProduct,
+        //     isExpanded: true,
+        //     underline: const SizedBox(),
+        //     items: productList.map((item) {
+        //       return DropdownMenuItem<String>(value: item, child: Text(item));
+        //     }).toList(),
+        //     onChanged: (val) {
+        //       int index = productList.indexOf(val!);
+        //       setState(() {
+        //         selectedProduct = val;
+        //         selectedProductCode = productCodeList[index];
+        //       });
+        //       applyFilter();
+        //     },
+        //     hint: const Text("Select Product"),
+        //   ),
+        // ),
       ],
     );
   }
+
+  //Added by manish on 11Aug26
+  void _showProductSearchDialog() {
+    final TextEditingController searchController = TextEditingController();
+
+    List<String> filteredProducts = List<String>.from(productList);
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            void searchProduct(String value) {
+              setDialogState(() {
+                final searchText = value.trim().toLowerCase();
+
+                if (searchText.isEmpty) {
+                  filteredProducts = List<String>.from(productList);
+                } else {
+                  filteredProducts = productList
+                      .where(
+                        (product) => product.toLowerCase().contains(searchText),
+                      )
+                      .toList();
+                }
+              });
+            }
+
+            return AlertDialog(
+              title: const Text("Select Product"),
+              content: SizedBox(
+                width: double.maxFinite,
+                height: 400,
+                child: Column(
+                  children: [
+                    TextField(
+                      controller: searchController,
+                      onChanged: searchProduct,
+                      decoration: InputDecoration(
+                        hintText: "Search Product",
+                        prefixIcon: const Icon(Icons.search),
+                        suffixIcon: searchController.text.isNotEmpty
+                            ? IconButton(
+                                icon: const Icon(Icons.clear),
+                                onPressed: () {
+                                  searchController.clear();
+                                  searchProduct("");
+                                },
+                              )
+                            : null,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 10),
+
+                    Expanded(
+                      child: filteredProducts.isEmpty
+                          ? const Center(
+                              child: Text(
+                                "No Product Found",
+                                style: TextStyle(color: Colors.grey),
+                              ),
+                            )
+                          : ListView.builder(
+                              itemCount: filteredProducts.length,
+                              itemBuilder: (context, index) {
+                                final product = filteredProducts[index];
+
+                                final productIndex = productList.indexOf(
+                                  product,
+                                );
+
+                                final isSelected = selectedProduct == product;
+
+                                return ListTile(
+                                  title: Text(product),
+                                  trailing: isSelected
+                                      ? const Icon(
+                                          Icons.check,
+                                          color: Colors.blue,
+                                        )
+                                      : null,
+                                  onTap: () {
+                                    setState(() {
+                                      selectedProduct = product;
+
+                                      if (productIndex >= 0 &&
+                                          productIndex <
+                                              productCodeList.length) {
+                                        selectedProductCode =
+                                            productCodeList[productIndex];
+                                      } else {
+                                        selectedProductCode = "";
+                                      }
+                                    });
+
+                                    Navigator.of(dialogContext).pop();
+
+                                    applyFilter();
+                                  },
+                                );
+                              },
+                            ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(dialogContext).pop();
+                  },
+                  child: const Text("CANCEL"),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  } //end by manish
 
   Widget _buildDateUI(String title, String value, bool isFrom) {
     return Column(
@@ -1008,15 +1173,31 @@ class _UpcomingEventActivity extends State<UpcomingEventActivity> {
 
         InkWell(
           onTap: () async {
+            final now = DateTime.now();
+
+            // Maximum allowed days based on selected tab
+            final int maxDays = selectedTab == "schedule"
+                ? int.tryParse(scheduleDays) ?? 5
+                : int.tryParse(renewalDays) ?? 10;
+
+            // Calculate maximum selectable date
+            final DateTime maxDate = now.add(Duration(days: maxDays - 1));
+
             final pickedDate = await showDatePicker(
               context: context,
-              initialDate: DateTime.now(),
-              firstDate: DateTime(2000),
-              lastDate: DateTime(2100),
+
+              // Start from today
+              initialDate: now,
+
+              // Don't allow dates before today
+              firstDate: now,
+
+              // Disable dates after allowed range
+              lastDate: maxDate,
             );
 
             if (pickedDate != null) {
-              String formatted =
+              final String formatted =
                   "${pickedDate.day.toString().padLeft(2, '0')}-"
                   "${pickedDate.month.toString().padLeft(2, '0')}-"
                   "${pickedDate.year}";
@@ -1028,6 +1209,7 @@ class _UpcomingEventActivity extends State<UpcomingEventActivity> {
                   toDate = formatted;
                 }
               });
+
               applyFilter();
             }
           },
@@ -1067,6 +1249,31 @@ class _UpcomingEventActivity extends State<UpcomingEventActivity> {
 
     return DateFormat("dd-MM-yyyy  hh:mm a").format(parsedDate);
   }
+
+  //added by manish on 11Aug26 for logout bug
+  void popUp() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext dialogContext) {
+        return CommonPopup(
+          title: "Logout",
+          message: "Are you sure you want to logout?",
+          onNo: () {
+            Navigator.of(dialogContext).pop();
+          },
+          onYes: () {
+            Navigator.of(dialogContext).pop();
+
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => LoginActivity()),
+            );
+          },
+        );
+      },
+    );
+  } //end for logout
 
   void setScheduleDates() {
     final now = DateTime.now();
